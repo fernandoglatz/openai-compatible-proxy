@@ -1,0 +1,11 @@
+[
+  {
+    "dropIndexes": "models",
+    "indexes": [
+      "id",
+      "name",
+      "createdAt",
+      "updatedAt"
+    ]
+  }
+]

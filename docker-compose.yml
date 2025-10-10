@@ -1,0 +1,51 @@
+version: "3"
+services:
+  backend:
+    build: .
+    hostname: backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    depends_on:
+      - mongo
+      - redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+
+  mongo:
+    image: mongo:7
+    hostname: mongo
+    ports:
+     - "27017:27017"
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - mongodb-data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+
+  redis:
+    image: redis:7-alpine
+    hostname: redis
+    ports:
+     - "0.0.0.0:6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+
+volumes:
+  mongodb-data:
+  redis-data:

@@ -1,0 +1,247 @@
+basePath: /openai-compatible-proxy
+definitions:
+  entity.Model:
+    properties:
+      arch:
+        type: string
+      compatibilityType:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      maxContextLength:
+        type: integer
+      name:
+        type: string
+      object:
+        type: string
+      publisher:
+        type: string
+      quantization:
+        type: string
+      state:
+        type: string
+      type:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  request.OllamaShowRequest:
+    properties:
+      model:
+        type: string
+    required:
+    - model
+    type: object
+  response.Details:
+    properties:
+      families:
+        items:
+          type: string
+        type: array
+      family:
+        type: string
+      format:
+        type: string
+      parameter_size:
+        type: string
+      parent_model:
+        type: string
+      quantization_level:
+        type: string
+    type: object
+  response.OllamaModel:
+    properties:
+      capabilities:
+        items:
+          type: string
+        type: array
+      details:
+        $ref: '#/definitions/response.Details'
+      digest:
+        type: string
+      model:
+        type: string
+      model_info:
+        additionalProperties:
+          type: string
+        type: object
+      modified_at:
+        type: string
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
+  response.OllamaResponse:
+    properties:
+      models:
+        items:
+          $ref: '#/definitions/response.OllamaModel'
+        type: array
+    type: object
+  response.OllamaVersionResponse:
+    properties:
+      version:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: openai-compatible-proxy
+  version: "1.0"
+paths:
+  /api/show:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Model name
+        in: body
+        name: model
+        required: true
+        schema:
+          $ref: '#/definitions/request.OllamaShowRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.OllamaModel'
+      summary: Get details of a specific model by name
+      tags:
+      - ollama
+  /api/tags:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.OllamaResponse'
+      summary: Get tags from models
+      tags:
+      - ollama
+  /api/version:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.OllamaVersionResponse'
+      summary: Get version information
+      tags:
+      - ollama
+  /health:
+    get:
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get health
+      tags:
+      - health
+  /model:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Model'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get models
+      tags:
+      - model
+  /model/{id}:
+    get:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Model'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get model
+      tags:
+      - model
+  /model/lm-studio:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Model'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Fetch and save models from LM Studio
+      tags:
+      - model
+securityDefinitions:
+  BasicAuth:
+    type: basic
+  Bearer:
+    description: Generated by /authentication
+    in: header
+    name: X-AUTHORIZATION
+    type: apiKey
+swagger: "2.0"

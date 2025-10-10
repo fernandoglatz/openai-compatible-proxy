@@ -1,0 +1,25 @@
+server:
+  listening: "0.0.0.0:8080"
+  context-path: "/openai-compatible-proxy"
+
+data:
+  mongo:
+    uri: "mongodb://mongo:27017"
+    database: "openai-compatible-proxy"
+
+  redis:
+    address: "redis:6379"
+    password: ""
+    db: 0
+    ttl:
+      redirect: 24h
+      model: 24h
+
+lm-studio:
+  url: "http://localhost:1234"
+  timeout: 600s
+
+log:
+  level: TRACE
+  format: TEXT
+  colored: true

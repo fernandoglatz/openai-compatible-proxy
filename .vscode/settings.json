@@ -1,0 +1,22 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        ".history": true
+    },
+    "explorerExclude.backup": {},
+    "peacock.color": "#a982eb",
+    "AllAutocomplete.showCurrentDocument": false,
+    "postman.settings.dotenv-detection-notification-visibility": false,
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#a982eb",
+        "statusBar.foreground": "#15202b",
+        "statusBarItem.hoverBackground": "#8b56e4",
+        "statusBarItem.remoteBackground": "#a982eb",
+        "statusBarItem.remoteForeground": "#15202b"
+    }
+}
