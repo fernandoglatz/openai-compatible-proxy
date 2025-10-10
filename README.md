@@ -65,7 +65,6 @@ data:
     password: ""
     db: 0
     ttl:
-      redirect: 24h
       model: 24h
 
 lm-studio:
