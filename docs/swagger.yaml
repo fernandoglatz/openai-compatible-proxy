@@ -87,6 +87,26 @@ definitions:
       version:
         type: string
     type: object
+  response.OpenAIListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/response.OpenAIModel'
+        type: array
+      object:
+        type: string
+    type: object
+  response.OpenAIModel:
+    properties:
+      created:
+        type: integer
+      id:
+        type: string
+      object:
+        type: string
+      owned_by:
+        type: string
+    type: object
 info:
   contact: {}
   license:
@@ -190,6 +210,18 @@ paths:
       summary: Get health
       tags:
       - health
+  /v1/models:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.OpenAIListResponse'
+      summary: List available models
+      tags:
+      - openai
 securityDefinitions:
   BasicAuth:
     type: basic

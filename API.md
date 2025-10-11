@@ -9,18 +9,9 @@ language_tabs:
   - php: PHP
   - java: Java
   - go: Go
-language_clients:
-  - shell: ""
-  - http: ""
-  - javascript: ""
-  - ruby: ""
-  - python: ""
-  - php: ""
-  - java: ""
-  - go: ""
 toc_footers: []
 includes: []
-search: false
+search: true
 highlight_theme: darkula
 headingLevel: 2
 
@@ -47,7 +38,7 @@ License: <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a
 
 <h1 id="openai-compatible-proxy-ollama">ollama</h1>
 
-## Get details of a specific model by name
+## post__api_show
 
 > Code samples
 
@@ -197,6 +188,8 @@ func main() {
 
 `POST /api/show`
 
+*Get details of a specific model by name*
+
 > Body parameter
 
 ```json
@@ -205,7 +198,7 @@ func main() {
 }
 ```
 
-<h3 id="get-details-of-a-specific-model-by-name-parameters">Parameters</h3>
+<h3 id="post__api_show-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -241,7 +234,7 @@ func main() {
 }
 ```
 
-<h3 id="get-details-of-a-specific-model-by-name-responses">Responses</h3>
+<h3 id="post__api_show-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -251,7 +244,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## Get tags from models
+## get__api_tags
 
 > Code samples
 
@@ -392,6 +385,8 @@ func main() {
 
 `GET /api/tags`
 
+*Get tags from models*
+
 > Example responses
 
 > 200 Response
@@ -426,7 +421,7 @@ func main() {
 }
 ```
 
-<h3 id="get-tags-from-models-responses">Responses</h3>
+<h3 id="get__api_tags-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -436,7 +431,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## Get version information
+## get__api_version
 
 > Code samples
 
@@ -577,6 +572,8 @@ func main() {
 
 `GET /api/version`
 
+*Get version information*
+
 > Example responses
 
 > 200 Response
@@ -587,7 +584,7 @@ func main() {
 }
 ```
 
-<h3 id="get-version-information-responses">Responses</h3>
+<h3 id="get__api_version-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -599,7 +596,7 @@ This operation does not require authentication
 
 <h1 id="openai-compatible-proxy-lm-studio">lm-studio</h1>
 
-## List available models
+## get__api_v0_models
 
 > Code samples
 
@@ -740,6 +737,8 @@ func main() {
 
 `GET /api/v0/models`
 
+*List available models*
+
 > Example responses
 
 > 200 Response
@@ -763,7 +762,7 @@ func main() {
 }
 ```
 
-<h3 id="list-available-models-responses">Responses</h3>
+<h3 id="get__api_v0_models-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -773,7 +772,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## Get details of a specific model by ID
+## get__api_v0_models_{model}
 
 > Code samples
 
@@ -914,7 +913,9 @@ func main() {
 
 `GET /api/v0/models/{model}`
 
-<h3 id="get-details-of-a-specific-model-by-id-parameters">Parameters</h3>
+*Get details of a specific model by ID*
+
+<h3 id="get__api_v0_models_{model}-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -938,7 +939,7 @@ func main() {
 }
 ```
 
-<h3 id="get-details-of-a-specific-model-by-id-responses">Responses</h3>
+<h3 id="get__api_v0_models_{model}-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -950,7 +951,7 @@ This operation does not require authentication
 
 <h1 id="openai-compatible-proxy-health">health</h1>
 
-## Get health
+## get__health
 
 > Code samples
 
@@ -1091,6 +1092,8 @@ func main() {
 
 `GET /health`
 
+*Get health*
+
 > Example responses
 
 > 200 Response
@@ -1099,13 +1102,186 @@ func main() {
 "string"
 ```
 
-<h3 id="get-health-responses">Responses</h3>
+<h3 id="get__health-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|string|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|string|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|string|
+
+<aside class="success">
+This operation does not require authentication
+</aside>
+
+<h1 id="openai-compatible-proxy-openai">openai</h1>
+
+## get__v1_models
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X GET /v1/models \
+  -H 'Accept: application/json'
+
+```
+
+```http
+GET /v1/models HTTP/1.1
+
+Accept: application/json
+
+```
+
+```javascript
+
+const headers = {
+  'Accept':'application/json'
+};
+
+fetch('/v1/models',
+{
+  method: 'GET',
+
+  headers: headers
+})
+.then(function(res) {
+    return res.json();
+}).then(function(body) {
+    console.log(body);
+});
+
+```
+
+```ruby
+require 'rest-client'
+require 'json'
+
+headers = {
+  'Accept' => 'application/json'
+}
+
+result = RestClient.get '/v1/models',
+  params: {
+  }, headers: headers
+
+p JSON.parse(result)
+
+```
+
+```python
+import requests
+headers = {
+  'Accept': 'application/json'
+}
+
+r = requests.get('/v1/models', headers = headers)
+
+print(r.json())
+
+```
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+$headers = array(
+    'Accept' => 'application/json',
+);
+
+$client = new \GuzzleHttp\Client();
+
+// Define array of request body.
+$request_body = array();
+
+try {
+    $response = $client->request('GET','/v1/models', array(
+        'headers' => $headers,
+        'json' => $request_body,
+       )
+    );
+    print_r($response->getBody()->getContents());
+ }
+ catch (\GuzzleHttp\Exception\BadResponseException $e) {
+    // handle exception or api errors.
+    print_r($e->getMessage());
+ }
+
+ // ...
+
+```
+
+```java
+URL obj = new URL("/v1/models");
+HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+con.setRequestMethod("GET");
+int responseCode = con.getResponseCode();
+BufferedReader in = new BufferedReader(
+    new InputStreamReader(con.getInputStream()));
+String inputLine;
+StringBuffer response = new StringBuffer();
+while ((inputLine = in.readLine()) != null) {
+    response.append(inputLine);
+}
+in.close();
+System.out.println(response.toString());
+
+```
+
+```go
+package main
+
+import (
+       "bytes"
+       "net/http"
+)
+
+func main() {
+
+    headers := map[string][]string{
+        "Accept": []string{"application/json"},
+    }
+
+    data := bytes.NewBuffer([]byte{jsonReq})
+    req, err := http.NewRequest("GET", "/v1/models", data)
+    req.Header = headers
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    // ...
+}
+
+```
+
+`GET /v1/models`
+
+*List available models*
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": [
+    {
+      "created": 0,
+      "id": "string",
+      "object": "string",
+      "owned_by": "string"
+    }
+  ],
+  "object": "string"
+}
+```
+
+<h3 id="get__v1_models-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[response.OpenAIListResponse](#schemaresponse.openailistresponse)|
 
 <aside class="success">
 This operation does not require authentication
@@ -1344,4 +1520,59 @@ This operation does not require authentication
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |version|string|false|none|none|
+
+<h2 id="tocS_response.OpenAIListResponse">response.OpenAIListResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemaresponse.openailistresponse"></a>
+<a id="schema_response.OpenAIListResponse"></a>
+<a id="tocSresponse.openailistresponse"></a>
+<a id="tocsresponse.openailistresponse"></a>
+
+```json
+{
+  "data": [
+    {
+      "created": 0,
+      "id": "string",
+      "object": "string",
+      "owned_by": "string"
+    }
+  ],
+  "object": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[[response.OpenAIModel](#schemaresponse.openaimodel)]|false|none|none|
+|object|string|false|none|none|
+
+<h2 id="tocS_response.OpenAIModel">response.OpenAIModel</h2>
+<!-- backwards compatibility -->
+<a id="schemaresponse.openaimodel"></a>
+<a id="schema_response.OpenAIModel"></a>
+<a id="tocSresponse.openaimodel"></a>
+<a id="tocsresponse.openaimodel"></a>
+
+```json
+{
+  "created": 0,
+  "id": "string",
+  "object": "string",
+  "owned_by": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|created|integer|false|none|none|
+|id|string|false|none|none|
+|object|string|false|none|none|
+|owned_by|string|false|none|none|
 

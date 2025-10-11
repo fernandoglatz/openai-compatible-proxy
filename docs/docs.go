@@ -167,6 +167,25 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v1/models": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "openai"
+                ],
+                "summary": "List available models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.OpenAIListResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -300,6 +319,37 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.OpenAIListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.OpenAIModel"
+                    }
+                },
+                "object": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.OpenAIModel": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "object": {
+                    "type": "string"
+                },
+                "owned_by": {
                     "type": "string"
                 }
             }
