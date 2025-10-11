@@ -85,3 +85,8 @@ func (client *LMStudioAPI) GetModels(ctx context.Context) ([]dto.LMStudioModel, 
 	log.Info(ctx).Msg("Successfully fetched models from LM Studio")
 	return apiResponse.Data, nil
 }
+
+// DoRequest executes an HTTP request to LM Studio
+func (client *LMStudioAPI) DoRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
+	return client.httpClient.Do(req)
+}

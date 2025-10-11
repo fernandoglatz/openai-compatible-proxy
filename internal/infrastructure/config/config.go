@@ -38,6 +38,13 @@ type Config struct {
 	LMStudio struct {
 		URL     string        `yaml:"url"`
 		Timeout time.Duration `yaml:"timeout"`
+		WOL     struct {
+			Enabled          bool          `yaml:"enabled"`
+			MacAddress       string        `yaml:"mac-address"`
+			BroadcastAddress string        `yaml:"broadcast-address"`
+			MaxRetries       int           `yaml:"max-retries"`
+			RetryWait        time.Duration `yaml:"retry-wait"`
+		} `yaml:"wol"`
 	} `yaml:"lm-studio"`
 
 	Log struct {

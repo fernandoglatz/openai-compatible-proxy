@@ -46,6 +46,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.55.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sabhiram/go-wol v0.0.0-20250815165103-eaddd4c17972 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect

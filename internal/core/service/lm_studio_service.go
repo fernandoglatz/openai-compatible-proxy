@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/exceptions"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
+	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/wol"
 	"fernandoglatz/openai-compatible-proxy/internal/core/entity"
 	"fernandoglatz/openai-compatible-proxy/internal/core/model/dto"
 	"fernandoglatz/openai-compatible-proxy/internal/core/port/service"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/api"
+	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/config"
 )
 
 // LMStudioService handles interaction with LM Studio and model persistence
@@ -128,6 +132,102 @@ func (service *LMStudioService) saveModel(ctx context.Context, model entity.Mode
 	return nil
 }
 
+// isConnectionError checks if the error is related to connection issues
+func (service *LMStudioService) isConnectionError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "connection refused") ||
+		strings.Contains(errStr, "no such host") ||
+		strings.Contains(errStr, "dial tcp") ||
+		strings.Contains(errStr, "i/o timeout") ||
+		strings.Contains(errStr, "connection timed out") ||
+		strings.Contains(errStr, "network is unreachable")
+}
+
+// tryWakeOnLAN attempts to wake the LM Studio host using WOL
+func (service *LMStudioService) tryWakeOnLAN(ctx context.Context) error {
+	wolConfig := config.ApplicationConfig.LMStudio.WOL
+
+	if !wolConfig.Enabled {
+		return fmt.Errorf("WOL is not enabled")
+	}
+
+	if wolConfig.MacAddress == "" || wolConfig.MacAddress == "00:00:00:00:00:00" {
+		return fmt.Errorf("WOL MAC address not configured")
+	}
+
+	log.Info(ctx).Msg("LM Studio host appears to be offline. Attempting Wake-on-LAN...")
+
+	err := wol.WakeOnLAN(ctx, wolConfig.MacAddress, wolConfig.BroadcastAddress)
+	if err != nil {
+		log.Error(ctx).Msg(fmt.Sprintf("Failed to send WOL packet: %v", err))
+		return err
+	}
+
+	return nil
+}
+
+// doRequestWithWOL executes an HTTP request with automatic WOL retry on connection failure
+func (service *LMStudioService) doRequestWithWOL(ctx context.Context, req *http.Request) (*http.Response, error) {
+	// First attempt
+	resp, err := service.lmStudioAPI.DoRequest(ctx, req)
+	if err == nil {
+		return resp, nil
+	}
+
+	// Check if it's a connection error and WOL is enabled
+	if !service.isConnectionError(err) {
+		return nil, err
+	}
+
+	wolConfig := config.ApplicationConfig.LMStudio.WOL
+	if !wolConfig.Enabled {
+		return nil, err
+	}
+
+	// Try WOL
+	wolErr := service.tryWakeOnLAN(ctx)
+	if wolErr != nil {
+		log.Warn(ctx).Msg(fmt.Sprintf("WOL attempt failed: %v", wolErr))
+		return nil, err
+	}
+
+	// Get retry configuration
+	maxRetries := wolConfig.MaxRetries
+	if maxRetries < 1 {
+		maxRetries = 3 // Default to 3 retries
+	}
+
+	retryWait := wolConfig.RetryWait
+	if retryWait == 0 {
+		retryWait = 5 * time.Second // Default to 5 seconds
+	}
+
+	// Retry the request with configured retries and wait time
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		log.Info(ctx).Msg(fmt.Sprintf("Waiting %v before retry attempt %d/%d...", retryWait, attempt, maxRetries))
+		time.Sleep(retryWait)
+
+		resp, err = service.lmStudioAPI.DoRequest(ctx, req)
+		if err == nil {
+			log.Info(ctx).Msg(fmt.Sprintf("Successfully connected to LM Studio after WOL (attempt %d/%d)", attempt, maxRetries))
+			return resp, nil
+		}
+
+		// Check if it's still a connection error
+		if !service.isConnectionError(err) {
+			// Different error type, stop retrying
+			break
+		}
+	}
+
+	log.Error(ctx).Msg(fmt.Sprintf("Failed to connect to LM Studio even after WOL and %d retry attempts", maxRetries))
+	return nil, err
+}
+
 // ProxyRequest forwards a request to LM Studio API with appropriate headers and body
 func (service *LMStudioService) ProxyRequest(ctx context.Context, method string, path string, requestBody []byte, headers http.Header) ([]byte, int, error) {
 	log.Info(ctx).Msg(fmt.Sprintf("Proxying %s request to LM Studio at path: %s", method, path))
@@ -155,8 +255,8 @@ func (service *LMStudioService) ProxyRequest(ctx context.Context, method string,
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	// Send request to LM Studio using proxy client (no timeout for long-running requests)
-	resp, err := service.lmStudioAPI.GetHTTPClient().Do(req)
+	// Send request to LM Studio with WOL support
+	resp, err := service.doRequestWithWOL(ctx, req)
 	if err != nil {
 		log.Error(ctx).Msg(fmt.Sprintf("Failed to send request to LM Studio: %v", err))
 		return []byte(`{"error": "failed to send request to LM Studio"}`), http.StatusBadGateway, err

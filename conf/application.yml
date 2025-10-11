@@ -15,8 +15,14 @@ data:
       model: 24h
 
 lm-studio:
-  url: "http://localhost:1234"
+  url: "http://127.0.0.1:11434"
   timeout: 600s
+  wol:
+    enabled: true
+    mac-address: "00:00:00:00:00:00"
+    broadcast-address: "255.255.255.255:9"
+    max-retries: 10
+    retry-wait: 5s
 
 log:
   level: TRACE
