@@ -17,12 +17,14 @@ import (
 )
 
 type OllamaController struct {
-	modelService service.IModelService
+	modelService    service.IModelService
+	lmStudioService service.ILMStudioService
 }
 
-func NewOllamaController(modelService service.IModelService) *OllamaController {
+func NewOllamaController(modelService service.IModelService, lmStudioService service.ILMStudioService) *OllamaController {
 	return &OllamaController{
-		modelService: modelService,
+		modelService:    modelService,
+		lmStudioService: lmStudioService,
 	}
 }
 
@@ -33,6 +35,13 @@ func NewOllamaController(modelService service.IModelService) *OllamaController {
 // @Router	/api/tags [get]
 func (controller *OllamaController) GetTags(ginCtx *gin.Context) {
 	ctx := GetContext(ginCtx)
+
+	// Try to fetch and save models from LM Studio, but continue even if it fails
+	err := controller.lmStudioService.FetchAndSaveModels(ctx)
+	if err != nil {
+		log.Warn(ctx).Msg("LM Studio API not available or error fetching models, returning only database models")
+	}
+
 	log.Info(ctx).Msg("Getting Ollama tags")
 
 	models, err := controller.modelService.GetAll(ctx)
@@ -110,7 +119,6 @@ func (controller *OllamaController) convertToOllamaResponse(models []entity.Mode
 			paramSize := extractParameterSize(model.Name)
 
 			details := response.Details{
-				ParentModel:       "",
 				Format:            model.Type,
 				Family:            family,
 				Families:          []string{family},

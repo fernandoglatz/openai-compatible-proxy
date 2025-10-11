@@ -19,7 +19,6 @@ type OllamaModel struct {
 
 // Details represents the details of a model
 type Details struct {
-	ParentModel       string   `json:"parent_model"`
 	Format            string   `json:"format"`
 	Family            string   `json:"family"`
 	Families          []string `json:"families"`

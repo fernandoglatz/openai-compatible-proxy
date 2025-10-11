@@ -1,6 +1,6 @@
 server:
   listening: "0.0.0.0:8080"
-  context-path: "/openai-compatible-proxy"
+  context-path: "/"
 
 data:
   mongo:
@@ -12,7 +12,6 @@ data:
     password: ""
     db: 0
     ttl:
-      redirect: 24h
       model: 24h
 
 lm-studio:

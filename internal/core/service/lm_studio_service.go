@@ -35,6 +35,7 @@ func (service *LMStudioService) FetchAndSaveModels(ctx context.Context) *excepti
 
 	models, err := service.lmStudioAPI.GetModels(ctx)
 	if err != nil {
+		log.Error(ctx).Msg(fmt.Sprintf("Failed to get models from LM Studio: %v", err))
 		return &exceptions.WrappedError{
 			Message:   "failed to get models from LM Studio",
 			BaseError: exceptions.GenericError,

@@ -25,7 +25,7 @@ headingLevel: 2
 
 Base URLs:
 
-* <a href="/openai-compatible-proxy">/openai-compatible-proxy</a>
+* <a href="/">/</a>
 
 License: <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a>
 
@@ -44,14 +44,14 @@ License: <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a
 
 ```shell
 # You can also use wget
-curl -X POST /openai-compatible-proxy/api/show \
+curl -X POST /api/show \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json'
 
 ```
 
 ```http
-POST /openai-compatible-proxy/api/show HTTP/1.1
+POST /api/show HTTP/1.1
 
 Content-Type: application/json
 Accept: application/json
@@ -67,7 +67,7 @@ const headers = {
   'Accept':'application/json'
 };
 
-fetch('/openai-compatible-proxy/api/show',
+fetch('/api/show',
 {
   method: 'POST',
   body: inputBody,
@@ -90,7 +90,7 @@ headers = {
   'Accept' => 'application/json'
 }
 
-result = RestClient.post '/openai-compatible-proxy/api/show',
+result = RestClient.post '/api/show',
   params: {
   }, headers: headers
 
@@ -105,7 +105,7 @@ headers = {
   'Accept': 'application/json'
 }
 
-r = requests.post('/openai-compatible-proxy/api/show', headers = headers)
+r = requests.post('/api/show', headers = headers)
 
 print(r.json())
 
@@ -127,7 +127,7 @@ $client = new \GuzzleHttp\Client();
 $request_body = array();
 
 try {
-    $response = $client->request('POST','/openai-compatible-proxy/api/show', array(
+    $response = $client->request('POST','/api/show', array(
         'headers' => $headers,
         'json' => $request_body,
        )
@@ -144,7 +144,7 @@ try {
 ```
 
 ```java
-URL obj = new URL("/openai-compatible-proxy/api/show");
+URL obj = new URL("/api/show");
 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 con.setRequestMethod("POST");
 int responseCode = con.getResponseCode();
@@ -176,7 +176,7 @@ func main() {
     }
 
     data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("POST", "/openai-compatible-proxy/api/show", data)
+    req, err := http.NewRequest("POST", "/api/show", data)
     req.Header = headers
 
     client := &http.Client{}
@@ -251,13 +251,13 @@ This operation does not require authentication
 
 ```shell
 # You can also use wget
-curl -X GET /openai-compatible-proxy/api/tags \
+curl -X GET /api/tags \
   -H 'Accept: application/json'
 
 ```
 
 ```http
-GET /openai-compatible-proxy/api/tags HTTP/1.1
+GET /api/tags HTTP/1.1
 
 Accept: application/json
 
@@ -269,7 +269,7 @@ const headers = {
   'Accept':'application/json'
 };
 
-fetch('/openai-compatible-proxy/api/tags',
+fetch('/api/tags',
 {
   method: 'GET',
 
@@ -291,7 +291,7 @@ headers = {
   'Accept' => 'application/json'
 }
 
-result = RestClient.get '/openai-compatible-proxy/api/tags',
+result = RestClient.get '/api/tags',
   params: {
   }, headers: headers
 
@@ -305,7 +305,7 @@ headers = {
   'Accept': 'application/json'
 }
 
-r = requests.get('/openai-compatible-proxy/api/tags', headers = headers)
+r = requests.get('/api/tags', headers = headers)
 
 print(r.json())
 
@@ -326,7 +326,7 @@ $client = new \GuzzleHttp\Client();
 $request_body = array();
 
 try {
-    $response = $client->request('GET','/openai-compatible-proxy/api/tags', array(
+    $response = $client->request('GET','/api/tags', array(
         'headers' => $headers,
         'json' => $request_body,
        )
@@ -343,7 +343,7 @@ try {
 ```
 
 ```java
-URL obj = new URL("/openai-compatible-proxy/api/tags");
+URL obj = new URL("/api/tags");
 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 con.setRequestMethod("GET");
 int responseCode = con.getResponseCode();
@@ -374,7 +374,7 @@ func main() {
     }
 
     data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "/openai-compatible-proxy/api/tags", data)
+    req, err := http.NewRequest("GET", "/api/tags", data)
     req.Header = headers
 
     client := &http.Client{}
@@ -439,13 +439,13 @@ This operation does not require authentication
 
 ```shell
 # You can also use wget
-curl -X GET /openai-compatible-proxy/api/version \
+curl -X GET /api/version \
   -H 'Accept: application/json'
 
 ```
 
 ```http
-GET /openai-compatible-proxy/api/version HTTP/1.1
+GET /api/version HTTP/1.1
 
 Accept: application/json
 
@@ -457,7 +457,7 @@ const headers = {
   'Accept':'application/json'
 };
 
-fetch('/openai-compatible-proxy/api/version',
+fetch('/api/version',
 {
   method: 'GET',
 
@@ -479,7 +479,7 @@ headers = {
   'Accept' => 'application/json'
 }
 
-result = RestClient.get '/openai-compatible-proxy/api/version',
+result = RestClient.get '/api/version',
   params: {
   }, headers: headers
 
@@ -493,7 +493,7 @@ headers = {
   'Accept': 'application/json'
 }
 
-r = requests.get('/openai-compatible-proxy/api/version', headers = headers)
+r = requests.get('/api/version', headers = headers)
 
 print(r.json())
 
@@ -514,7 +514,7 @@ $client = new \GuzzleHttp\Client();
 $request_body = array();
 
 try {
-    $response = $client->request('GET','/openai-compatible-proxy/api/version', array(
+    $response = $client->request('GET','/api/version', array(
         'headers' => $headers,
         'json' => $request_body,
        )
@@ -531,7 +531,7 @@ try {
 ```
 
 ```java
-URL obj = new URL("/openai-compatible-proxy/api/version");
+URL obj = new URL("/api/version");
 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 con.setRequestMethod("GET");
 int responseCode = con.getResponseCode();
@@ -562,7 +562,7 @@ func main() {
     }
 
     data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "/openai-compatible-proxy/api/version", data)
+    req, err := http.NewRequest("GET", "/api/version", data)
     req.Header = headers
 
     client := &http.Client{}
@@ -604,13 +604,13 @@ This operation does not require authentication
 
 ```shell
 # You can also use wget
-curl -X GET /openai-compatible-proxy/health \
+curl -X GET /health \
   -H 'Accept: text/plain'
 
 ```
 
 ```http
-GET /openai-compatible-proxy/health HTTP/1.1
+GET /health HTTP/1.1
 
 Accept: text/plain
 
@@ -622,7 +622,7 @@ const headers = {
   'Accept':'text/plain'
 };
 
-fetch('/openai-compatible-proxy/health',
+fetch('/health',
 {
   method: 'GET',
 
@@ -644,7 +644,7 @@ headers = {
   'Accept' => 'text/plain'
 }
 
-result = RestClient.get '/openai-compatible-proxy/health',
+result = RestClient.get '/health',
   params: {
   }, headers: headers
 
@@ -658,7 +658,7 @@ headers = {
   'Accept': 'text/plain'
 }
 
-r = requests.get('/openai-compatible-proxy/health', headers = headers)
+r = requests.get('/health', headers = headers)
 
 print(r.json())
 
@@ -679,7 +679,7 @@ $client = new \GuzzleHttp\Client();
 $request_body = array();
 
 try {
-    $response = $client->request('GET','/openai-compatible-proxy/health', array(
+    $response = $client->request('GET','/health', array(
         'headers' => $headers,
         'json' => $request_body,
        )
@@ -696,7 +696,7 @@ try {
 ```
 
 ```java
-URL obj = new URL("/openai-compatible-proxy/health");
+URL obj = new URL("/health");
 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 con.setRequestMethod("GET");
 int responseCode = con.getResponseCode();
@@ -727,7 +727,7 @@ func main() {
     }
 
     data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "/openai-compatible-proxy/health", data)
+    req, err := http.NewRequest("GET", "/health", data)
     req.Header = headers
 
     client := &http.Client{}
@@ -761,629 +761,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="openai-compatible-proxy-model">model</h1>
-
-## get__model
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET /openai-compatible-proxy/model \
-  -H 'Accept: application/json'
-
-```
-
-```http
-GET /openai-compatible-proxy/model HTTP/1.1
-
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json'
-};
-
-fetch('/openai-compatible-proxy/model',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json'
-}
-
-result = RestClient.get '/openai-compatible-proxy/model',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json'
-}
-
-r = requests.get('/openai-compatible-proxy/model', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','/openai-compatible-proxy/model', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("/openai-compatible-proxy/model");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "/openai-compatible-proxy/model", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
-`GET /model`
-
-*Get models*
-
-> Example responses
-
-> 200 Response
-
-```json
-[
-  {
-    "arch": "string",
-    "compatibilityType": "string",
-    "createdAt": "string",
-    "id": "string",
-    "maxContextLength": 0,
-    "name": "string",
-    "object": "string",
-    "publisher": "string",
-    "quantization": "string",
-    "state": "string",
-    "type": "string",
-    "updatedAt": "string"
-  }
-]
-```
-
-<h3 id="get__model-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|Inline|
-|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[response.Response](#schemaresponse.response)|
-|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[response.Response](#schemaresponse.response)|
-
-<h3 id="get__model-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[[entity.Model](#schemaentity.model)]|false|none|none|
-|» arch|string|false|none|none|
-|» compatibilityType|string|false|none|none|
-|» createdAt|string|false|none|none|
-|» id|string|false|none|none|
-|» maxContextLength|integer|false|none|none|
-|» name|string|false|none|none|
-|» object|string|false|none|none|
-|» publisher|string|false|none|none|
-|» quantization|string|false|none|none|
-|» state|string|false|none|none|
-|» type|string|false|none|none|
-|» updatedAt|string|false|none|none|
-
-<aside class="success">
-This operation does not require authentication
-</aside>
-
-## get__model_{id}
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET /openai-compatible-proxy/model/{id} \
-  -H 'Accept: application/json'
-
-```
-
-```http
-GET /openai-compatible-proxy/model/{id} HTTP/1.1
-
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json'
-};
-
-fetch('/openai-compatible-proxy/model/{id}',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json'
-}
-
-result = RestClient.get '/openai-compatible-proxy/model/{id}',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json'
-}
-
-r = requests.get('/openai-compatible-proxy/model/{id}', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','/openai-compatible-proxy/model/{id}', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("/openai-compatible-proxy/model/{id}");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "/openai-compatible-proxy/model/{id}", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
-`GET /model/{id}`
-
-*Get model*
-
-<h3 id="get__model_{id}-parameters">Parameters</h3>
-
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|id|path|string|true|id|
-
-> Example responses
-
-> 200 Response
-
-```json
-{
-  "arch": "string",
-  "compatibilityType": "string",
-  "createdAt": "string",
-  "id": "string",
-  "maxContextLength": 0,
-  "name": "string",
-  "object": "string",
-  "publisher": "string",
-  "quantization": "string",
-  "state": "string",
-  "type": "string",
-  "updatedAt": "string"
-}
-```
-
-<h3 id="get__model_{id}-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[entity.Model](#schemaentity.model)|
-|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[response.Response](#schemaresponse.response)|
-|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[response.Response](#schemaresponse.response)|
-
-<aside class="success">
-This operation does not require authentication
-</aside>
-
-## get__model_lm-studio
-
-> Code samples
-
-```shell
-# You can also use wget
-curl -X GET /openai-compatible-proxy/model/lm-studio \
-  -H 'Accept: application/json'
-
-```
-
-```http
-GET /openai-compatible-proxy/model/lm-studio HTTP/1.1
-
-Accept: application/json
-
-```
-
-```javascript
-
-const headers = {
-  'Accept':'application/json'
-};
-
-fetch('/openai-compatible-proxy/model/lm-studio',
-{
-  method: 'GET',
-
-  headers: headers
-})
-.then(function(res) {
-    return res.json();
-}).then(function(body) {
-    console.log(body);
-});
-
-```
-
-```ruby
-require 'rest-client'
-require 'json'
-
-headers = {
-  'Accept' => 'application/json'
-}
-
-result = RestClient.get '/openai-compatible-proxy/model/lm-studio',
-  params: {
-  }, headers: headers
-
-p JSON.parse(result)
-
-```
-
-```python
-import requests
-headers = {
-  'Accept': 'application/json'
-}
-
-r = requests.get('/openai-compatible-proxy/model/lm-studio', headers = headers)
-
-print(r.json())
-
-```
-
-```php
-<?php
-
-require 'vendor/autoload.php';
-
-$headers = array(
-    'Accept' => 'application/json',
-);
-
-$client = new \GuzzleHttp\Client();
-
-// Define array of request body.
-$request_body = array();
-
-try {
-    $response = $client->request('GET','/openai-compatible-proxy/model/lm-studio', array(
-        'headers' => $headers,
-        'json' => $request_body,
-       )
-    );
-    print_r($response->getBody()->getContents());
- }
- catch (\GuzzleHttp\Exception\BadResponseException $e) {
-    // handle exception or api errors.
-    print_r($e->getMessage());
- }
-
- // ...
-
-```
-
-```java
-URL obj = new URL("/openai-compatible-proxy/model/lm-studio");
-HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-con.setRequestMethod("GET");
-int responseCode = con.getResponseCode();
-BufferedReader in = new BufferedReader(
-    new InputStreamReader(con.getInputStream()));
-String inputLine;
-StringBuffer response = new StringBuffer();
-while ((inputLine = in.readLine()) != null) {
-    response.append(inputLine);
-}
-in.close();
-System.out.println(response.toString());
-
-```
-
-```go
-package main
-
-import (
-       "bytes"
-       "net/http"
-)
-
-func main() {
-
-    headers := map[string][]string{
-        "Accept": []string{"application/json"},
-    }
-
-    data := bytes.NewBuffer([]byte{jsonReq})
-    req, err := http.NewRequest("GET", "/openai-compatible-proxy/model/lm-studio", data)
-    req.Header = headers
-
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    // ...
-}
-
-```
-
-`GET /model/lm-studio`
-
-*Fetch and save models from LM Studio*
-
-> Example responses
-
-> 200 Response
-
-```json
-[
-  {
-    "arch": "string",
-    "compatibilityType": "string",
-    "createdAt": "string",
-    "id": "string",
-    "maxContextLength": 0,
-    "name": "string",
-    "object": "string",
-    "publisher": "string",
-    "quantization": "string",
-    "state": "string",
-    "type": "string",
-    "updatedAt": "string"
-  }
-]
-```
-
-<h3 id="get__model_lm-studio-responses">Responses</h3>
-
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|Inline|
-|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[response.Response](#schemaresponse.response)|
-|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[response.Response](#schemaresponse.response)|
-
-<h3 id="get__model_lm-studio-responseschema">Response Schema</h3>
-
-Status Code **200**
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[[entity.Model](#schemaentity.model)]|false|none|none|
-|» arch|string|false|none|none|
-|» compatibilityType|string|false|none|none|
-|» createdAt|string|false|none|none|
-|» id|string|false|none|none|
-|» maxContextLength|integer|false|none|none|
-|» name|string|false|none|none|
-|» object|string|false|none|none|
-|» publisher|string|false|none|none|
-|» quantization|string|false|none|none|
-|» state|string|false|none|none|
-|» type|string|false|none|none|
-|» updatedAt|string|false|none|none|
-
-<aside class="success">
-This operation does not require authentication
-</aside>
-
 # Schemas
-
-<h2 id="tocS_entity.Model">entity.Model</h2>
-<!-- backwards compatibility -->
-<a id="schemaentity.model"></a>
-<a id="schema_entity.Model"></a>
-<a id="tocSentity.model"></a>
-<a id="tocsentity.model"></a>
-
-```json
-{
-  "arch": "string",
-  "compatibilityType": "string",
-  "createdAt": "string",
-  "id": "string",
-  "maxContextLength": 0,
-  "name": "string",
-  "object": "string",
-  "publisher": "string",
-  "quantization": "string",
-  "state": "string",
-  "type": "string",
-  "updatedAt": "string"
-}
-
-```
-
-### Properties
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|arch|string|false|none|none|
-|compatibilityType|string|false|none|none|
-|createdAt|string|false|none|none|
-|id|string|false|none|none|
-|maxContextLength|integer|false|none|none|
-|name|string|false|none|none|
-|object|string|false|none|none|
-|publisher|string|false|none|none|
-|quantization|string|false|none|none|
-|state|string|false|none|none|
-|type|string|false|none|none|
-|updatedAt|string|false|none|none|
 
 <h2 id="tocS_request.OllamaShowRequest">request.OllamaShowRequest</h2>
 <!-- backwards compatibility -->
@@ -1550,26 +928,4 @@ This operation does not require authentication
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |version|string|false|none|none|
-
-<h2 id="tocS_response.Response">response.Response</h2>
-<!-- backwards compatibility -->
-<a id="schemaresponse.response"></a>
-<a id="schema_response.Response"></a>
-<a id="tocSresponse.response"></a>
-<a id="tocsresponse.response"></a>
-
-```json
-{
-  "code": "string",
-  "message": "string"
-}
-
-```
-
-### Properties
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|code|string|false|none|none|
-|message|string|false|none|none|
 

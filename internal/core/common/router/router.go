@@ -25,26 +25,17 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	modelService := service.NewModelService(modelRepository)
 	lmStudioAPI := api.NewLMStudioAPI()
 	lmStudioService := service.NewLMStudioService(lmStudioAPI, modelService)
-	modelController := controller.NewModelController(modelService, lmStudioService)
 	lmStudioProxyController := controller.NewLMStudioProxyController(lmStudioService)
-	ollamaController := controller.NewOllamaController(modelService)
+	ollamaController := controller.NewOllamaController(modelService, lmStudioService)
 
 	healthController := controller.NewHealthController()
 
-	routerModel := router.Group("/model")
-	routerModel.GET("", modelController.Get)
-	routerModel.GET(":id", modelController.GetId)
-	routerModel.GET("/lm-studio", modelController.GetLMStudioModels)
-
-	router.GET("/health", healthController.Health)
-	router.GET("/swagger-ui/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	// OpenAI proxy routes
-	routerV1 := engine.Group("/v1")
+	routerV1 := router.Group("/v1")
 	routerV1.Any("*any", lmStudioProxyController.ProxyRequest)
 
 	// Ollama API routes
-	routerAPI := engine.Group("/api")
+	routerAPI := router.Group("/api")
 	routerAPI.GET("/tags", ollamaController.GetTags)
 	routerAPI.POST("/show", ollamaController.Show)
 	routerAPI.GET("/version", ollamaController.GetVersion)
@@ -52,6 +43,9 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	// LM Studio proxy routes
 	routerAPIV0 := routerAPI.Group("/v0")
 	routerAPIV0.Any("*any", lmStudioProxyController.ProxyRequest)
+
+	router.GET("/health", healthController.Health)
+	router.GET("/swagger-ui/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	log.Info(ctx).Msg("Routes configured")
 }
