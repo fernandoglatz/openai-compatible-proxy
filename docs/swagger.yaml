@@ -19,9 +19,37 @@ definitions:
         type: string
       parameter_size:
         type: string
-      parent_model:
-        type: string
       quantization_level:
+        type: string
+    type: object
+  response.LMStudioListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/response.LMStudioModel'
+        type: array
+      object:
+        type: string
+    type: object
+  response.LMStudioModel:
+    properties:
+      arch:
+        type: string
+      compatibility_type:
+        type: string
+      id:
+        type: string
+      max_context_length:
+        type: integer
+      object:
+        type: string
+      publisher:
+        type: string
+      quantization:
+        type: string
+      state:
+        type: string
+      type:
         type: string
     type: object
   response.OllamaModel:
@@ -100,6 +128,36 @@ paths:
       summary: Get tags from models
       tags:
       - ollama
+  /api/v0/models:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.LMStudioListResponse'
+      summary: List available models
+      tags:
+      - lm-studio
+  /api/v0/models/{model}:
+    get:
+      parameters:
+      - description: Model ID
+        in: path
+        name: model
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.LMStudioModel'
+      summary: Get details of a specific model by ID
+      tags:
+      - lm-studio
   /api/version:
     get:
       produces:

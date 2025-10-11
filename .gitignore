@@ -21,3 +21,6 @@
 go.work
 
 .history
+
+# Build output
+bin/

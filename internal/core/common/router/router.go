@@ -26,13 +26,25 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	lmStudioAPI := api.NewLMStudioAPI()
 	lmStudioService := service.NewLMStudioService(lmStudioAPI, modelService)
 	lmStudioProxyController := controller.NewLMStudioProxyController(lmStudioService)
+	lmStudioController := controller.NewLMStudioController(modelService, lmStudioService)
 	ollamaController := controller.NewOllamaController(modelService, lmStudioService)
+	openAIController := controller.NewOpenAIController(modelService, lmStudioService)
 
 	healthController := controller.NewHealthController()
 
-	// OpenAI proxy routes
+	// OpenAI routes - use middleware to handle /v1/models specifically before proxy
 	routerV1 := router.Group("/v1")
-	routerV1.Any("*any", lmStudioProxyController.ProxyRequest)
+	routerV1.Use(func(c *gin.Context) {
+		// Handle /v1/models specifically
+		if c.Request.URL.Path == "/v1/models" && c.Request.Method == "GET" {
+			openAIController.ListModels(c)
+			c.Abort()
+			return
+		}
+		c.Next()
+	})
+	// Proxy catches all /v1/* requests
+	routerV1.Any("/*any", lmStudioProxyController.ProxyRequest)
 
 	// Ollama API routes
 	routerAPI := router.Group("/api")
@@ -40,9 +52,29 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	routerAPI.POST("/show", ollamaController.Show)
 	routerAPI.GET("/version", ollamaController.GetVersion)
 
-	// LM Studio proxy routes
+	// LM Studio API routes - use middleware to handle specific routes before proxy
 	routerAPIV0 := routerAPI.Group("/v0")
-	routerAPIV0.Any("*any", lmStudioProxyController.ProxyRequest)
+	routerAPIV0.Use(func(c *gin.Context) {
+		// Handle specific /api/v0 routes
+		if c.Request.Method == "GET" {
+			if c.Request.URL.Path == "/api/v0/models" {
+				lmStudioController.ListModels(c)
+				c.Abort()
+				return
+			}
+			// Handle /api/v0/models/:model pattern
+			if len(c.Request.URL.Path) > 15 && c.Request.URL.Path[:15] == "/api/v0/models/" {
+				// Extract the model parameter
+				c.Params = append(c.Params, gin.Param{Key: "model", Value: c.Request.URL.Path[15:]})
+				lmStudioController.GetModel(c)
+				c.Abort()
+				return
+			}
+		}
+		c.Next()
+	})
+	// Proxy catches all remaining /api/v0/* requests
+	routerAPIV0.Any("/*any", lmStudioProxyController.ProxyRequest)
 
 	router.GET("/health", healthController.Health)
 	router.GET("/swagger-ui/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

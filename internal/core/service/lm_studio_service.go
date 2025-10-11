@@ -155,7 +155,7 @@ func (service *LMStudioService) ProxyRequest(ctx context.Context, method string,
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	// Send request to LM Studio
+	// Send request to LM Studio using proxy client (no timeout for long-running requests)
 	resp, err := service.lmStudioAPI.GetHTTPClient().Do(req)
 	if err != nil {
 		log.Error(ctx).Msg(fmt.Sprintf("Failed to send request to LM Studio: %v", err))

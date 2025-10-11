@@ -22,6 +22,16 @@ func NewLMStudioProxyController(lmStudioService service.ILMStudioService) *LMStu
 
 func (controller *LMStudioProxyController) ProxyRequest(ginCtx *gin.Context) {
 	ctx := GetContext(ginCtx)
+
+	// Get the full path from the request (e.g., /v1/models, /v1/chat/completions)
+	path := ginCtx.Request.URL.Path
+
+	// Skip proxying for /v1/models - it's handled by OpenAIController
+	if path == "/v1/models" || path == "/v1/models/" {
+		ginCtx.Next()
+		return
+	}
+
 	log.Info(ctx).Msg("Forwarding /v1 request to LM Studio")
 
 	// Read the request body
@@ -31,9 +41,6 @@ func (controller *LMStudioProxyController) ProxyRequest(ginCtx *gin.Context) {
 		ginCtx.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
 		return
 	}
-
-	// Get the full path from the request (e.g., /v1/models, /v1/chat/completions)
-	path := ginCtx.Request.URL.Path
 
 	// Forward to LM Studio using the service's proxy functionality
 	responseBody, statusCode, err := controller.lmStudioService.ProxyRequest(ctx, ginCtx.Request.Method, path, body, ginCtx.Request.Header)

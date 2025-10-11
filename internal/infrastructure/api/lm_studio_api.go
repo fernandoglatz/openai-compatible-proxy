@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"time"
 
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
 	"fernandoglatz/openai-compatible-proxy/internal/core/model/dto"
@@ -26,10 +28,21 @@ func NewLMStudioAPI() *LMStudioAPI {
 		log.Fatal(context.Background()).Msg("LM Studio URL configuration is empty")
 	}
 
+	// Custom transport with reduced connection timeout
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   1 * time.Second, // Connection timeout
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 10 * time.Second,
+	}
+
 	return &LMStudioAPI{
 		baseURL: config.URL,
 		httpClient: &http.Client{
-			Timeout: config.Timeout,
+			Timeout:   config.Timeout,
+			Transport: transport,
 		},
 	}
 }

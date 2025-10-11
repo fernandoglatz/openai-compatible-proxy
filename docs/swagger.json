@@ -63,6 +63,53 @@
                 }
             }
         },
+        "/api/v0/models": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lm-studio"
+                ],
+                "summary": "List available models",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.LMStudioListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v0/models/{model}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lm-studio"
+                ],
+                "summary": "Get details of a specific model by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Model ID",
+                        "name": "model",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.LMStudioModel"
+                        }
+                    }
+                }
+            }
+        },
         "/api/version": {
             "get": {
                 "produces": [
@@ -144,10 +191,53 @@
                 "parameter_size": {
                     "type": "string"
                 },
-                "parent_model": {
+                "quantization_level": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.LMStudioListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.LMStudioModel"
+                    }
+                },
+                "object": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.LMStudioModel": {
+            "type": "object",
+            "properties": {
+                "arch": {
                     "type": "string"
                 },
-                "quantization_level": {
+                "compatibility_type": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "max_context_length": {
+                    "type": "integer"
+                },
+                "object": {
+                    "type": "string"
+                },
+                "publisher": {
+                    "type": "string"
+                },
+                "quantization": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }

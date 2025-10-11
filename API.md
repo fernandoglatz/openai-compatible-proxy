@@ -9,9 +9,18 @@ language_tabs:
   - php: PHP
   - java: Java
   - go: Go
+language_clients:
+  - shell: ""
+  - http: ""
+  - javascript: ""
+  - ruby: ""
+  - python: ""
+  - php: ""
+  - java: ""
+  - go: ""
 toc_footers: []
 includes: []
-search: true
+search: false
 highlight_theme: darkula
 headingLevel: 2
 
@@ -38,7 +47,7 @@ License: <a href="http://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0</a
 
 <h1 id="openai-compatible-proxy-ollama">ollama</h1>
 
-## post__api_show
+## Get details of a specific model by name
 
 > Code samples
 
@@ -188,8 +197,6 @@ func main() {
 
 `POST /api/show`
 
-*Get details of a specific model by name*
-
 > Body parameter
 
 ```json
@@ -198,7 +205,7 @@ func main() {
 }
 ```
 
-<h3 id="post__api_show-parameters">Parameters</h3>
+<h3 id="get-details-of-a-specific-model-by-name-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -220,7 +227,6 @@ func main() {
     "family": "string",
     "format": "string",
     "parameter_size": "string",
-    "parent_model": "string",
     "quantization_level": "string"
   },
   "digest": "string",
@@ -235,7 +241,7 @@ func main() {
 }
 ```
 
-<h3 id="post__api_show-responses">Responses</h3>
+<h3 id="get-details-of-a-specific-model-by-name-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -245,7 +251,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## get__api_tags
+## Get tags from models
 
 > Code samples
 
@@ -386,8 +392,6 @@ func main() {
 
 `GET /api/tags`
 
-*Get tags from models*
-
 > Example responses
 
 > 200 Response
@@ -406,7 +410,6 @@ func main() {
         "family": "string",
         "format": "string",
         "parameter_size": "string",
-        "parent_model": "string",
         "quantization_level": "string"
       },
       "digest": "string",
@@ -423,7 +426,7 @@ func main() {
 }
 ```
 
-<h3 id="get__api_tags-responses">Responses</h3>
+<h3 id="get-tags-from-models-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -433,7 +436,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## get__api_version
+## Get version information
 
 > Code samples
 
@@ -574,8 +577,6 @@ func main() {
 
 `GET /api/version`
 
-*Get version information*
-
 > Example responses
 
 > 200 Response
@@ -586,7 +587,7 @@ func main() {
 }
 ```
 
-<h3 id="get__api_version-responses">Responses</h3>
+<h3 id="get-version-information-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -596,9 +597,360 @@ func main() {
 This operation does not require authentication
 </aside>
 
+<h1 id="openai-compatible-proxy-lm-studio">lm-studio</h1>
+
+## List available models
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X GET /api/v0/models \
+  -H 'Accept: application/json'
+
+```
+
+```http
+GET /api/v0/models HTTP/1.1
+
+Accept: application/json
+
+```
+
+```javascript
+
+const headers = {
+  'Accept':'application/json'
+};
+
+fetch('/api/v0/models',
+{
+  method: 'GET',
+
+  headers: headers
+})
+.then(function(res) {
+    return res.json();
+}).then(function(body) {
+    console.log(body);
+});
+
+```
+
+```ruby
+require 'rest-client'
+require 'json'
+
+headers = {
+  'Accept' => 'application/json'
+}
+
+result = RestClient.get '/api/v0/models',
+  params: {
+  }, headers: headers
+
+p JSON.parse(result)
+
+```
+
+```python
+import requests
+headers = {
+  'Accept': 'application/json'
+}
+
+r = requests.get('/api/v0/models', headers = headers)
+
+print(r.json())
+
+```
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+$headers = array(
+    'Accept' => 'application/json',
+);
+
+$client = new \GuzzleHttp\Client();
+
+// Define array of request body.
+$request_body = array();
+
+try {
+    $response = $client->request('GET','/api/v0/models', array(
+        'headers' => $headers,
+        'json' => $request_body,
+       )
+    );
+    print_r($response->getBody()->getContents());
+ }
+ catch (\GuzzleHttp\Exception\BadResponseException $e) {
+    // handle exception or api errors.
+    print_r($e->getMessage());
+ }
+
+ // ...
+
+```
+
+```java
+URL obj = new URL("/api/v0/models");
+HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+con.setRequestMethod("GET");
+int responseCode = con.getResponseCode();
+BufferedReader in = new BufferedReader(
+    new InputStreamReader(con.getInputStream()));
+String inputLine;
+StringBuffer response = new StringBuffer();
+while ((inputLine = in.readLine()) != null) {
+    response.append(inputLine);
+}
+in.close();
+System.out.println(response.toString());
+
+```
+
+```go
+package main
+
+import (
+       "bytes"
+       "net/http"
+)
+
+func main() {
+
+    headers := map[string][]string{
+        "Accept": []string{"application/json"},
+    }
+
+    data := bytes.NewBuffer([]byte{jsonReq})
+    req, err := http.NewRequest("GET", "/api/v0/models", data)
+    req.Header = headers
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    // ...
+}
+
+```
+
+`GET /api/v0/models`
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": [
+    {
+      "arch": "string",
+      "compatibility_type": "string",
+      "id": "string",
+      "max_context_length": 0,
+      "object": "string",
+      "publisher": "string",
+      "quantization": "string",
+      "state": "string",
+      "type": "string"
+    }
+  ],
+  "object": "string"
+}
+```
+
+<h3 id="list-available-models-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[response.LMStudioListResponse](#schemaresponse.lmstudiolistresponse)|
+
+<aside class="success">
+This operation does not require authentication
+</aside>
+
+## Get details of a specific model by ID
+
+> Code samples
+
+```shell
+# You can also use wget
+curl -X GET /api/v0/models/{model} \
+  -H 'Accept: application/json'
+
+```
+
+```http
+GET /api/v0/models/{model} HTTP/1.1
+
+Accept: application/json
+
+```
+
+```javascript
+
+const headers = {
+  'Accept':'application/json'
+};
+
+fetch('/api/v0/models/{model}',
+{
+  method: 'GET',
+
+  headers: headers
+})
+.then(function(res) {
+    return res.json();
+}).then(function(body) {
+    console.log(body);
+});
+
+```
+
+```ruby
+require 'rest-client'
+require 'json'
+
+headers = {
+  'Accept' => 'application/json'
+}
+
+result = RestClient.get '/api/v0/models/{model}',
+  params: {
+  }, headers: headers
+
+p JSON.parse(result)
+
+```
+
+```python
+import requests
+headers = {
+  'Accept': 'application/json'
+}
+
+r = requests.get('/api/v0/models/{model}', headers = headers)
+
+print(r.json())
+
+```
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+$headers = array(
+    'Accept' => 'application/json',
+);
+
+$client = new \GuzzleHttp\Client();
+
+// Define array of request body.
+$request_body = array();
+
+try {
+    $response = $client->request('GET','/api/v0/models/{model}', array(
+        'headers' => $headers,
+        'json' => $request_body,
+       )
+    );
+    print_r($response->getBody()->getContents());
+ }
+ catch (\GuzzleHttp\Exception\BadResponseException $e) {
+    // handle exception or api errors.
+    print_r($e->getMessage());
+ }
+
+ // ...
+
+```
+
+```java
+URL obj = new URL("/api/v0/models/{model}");
+HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+con.setRequestMethod("GET");
+int responseCode = con.getResponseCode();
+BufferedReader in = new BufferedReader(
+    new InputStreamReader(con.getInputStream()));
+String inputLine;
+StringBuffer response = new StringBuffer();
+while ((inputLine = in.readLine()) != null) {
+    response.append(inputLine);
+}
+in.close();
+System.out.println(response.toString());
+
+```
+
+```go
+package main
+
+import (
+       "bytes"
+       "net/http"
+)
+
+func main() {
+
+    headers := map[string][]string{
+        "Accept": []string{"application/json"},
+    }
+
+    data := bytes.NewBuffer([]byte{jsonReq})
+    req, err := http.NewRequest("GET", "/api/v0/models/{model}", data)
+    req.Header = headers
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    // ...
+}
+
+```
+
+`GET /api/v0/models/{model}`
+
+<h3 id="get-details-of-a-specific-model-by-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|model|path|string|true|Model ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "arch": "string",
+  "compatibility_type": "string",
+  "id": "string",
+  "max_context_length": 0,
+  "object": "string",
+  "publisher": "string",
+  "quantization": "string",
+  "state": "string",
+  "type": "string"
+}
+```
+
+<h3 id="get-details-of-a-specific-model-by-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[response.LMStudioModel](#schemaresponse.lmstudiomodel)|
+
+<aside class="success">
+This operation does not require authentication
+</aside>
+
 <h1 id="openai-compatible-proxy-health">health</h1>
 
-## get__health
+## Get health
 
 > Code samples
 
@@ -739,8 +1091,6 @@ func main() {
 
 `GET /health`
 
-*Get health*
-
 > Example responses
 
 > 200 Response
@@ -749,7 +1099,7 @@ func main() {
 "string"
 ```
 
-<h3 id="get__health-responses">Responses</h3>
+<h3 id="get-health-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -798,7 +1148,6 @@ This operation does not require authentication
   "family": "string",
   "format": "string",
   "parameter_size": "string",
-  "parent_model": "string",
   "quantization_level": "string"
 }
 
@@ -812,8 +1161,77 @@ This operation does not require authentication
 |family|string|false|none|none|
 |format|string|false|none|none|
 |parameter_size|string|false|none|none|
-|parent_model|string|false|none|none|
 |quantization_level|string|false|none|none|
+
+<h2 id="tocS_response.LMStudioListResponse">response.LMStudioListResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemaresponse.lmstudiolistresponse"></a>
+<a id="schema_response.LMStudioListResponse"></a>
+<a id="tocSresponse.lmstudiolistresponse"></a>
+<a id="tocsresponse.lmstudiolistresponse"></a>
+
+```json
+{
+  "data": [
+    {
+      "arch": "string",
+      "compatibility_type": "string",
+      "id": "string",
+      "max_context_length": 0,
+      "object": "string",
+      "publisher": "string",
+      "quantization": "string",
+      "state": "string",
+      "type": "string"
+    }
+  ],
+  "object": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[[response.LMStudioModel](#schemaresponse.lmstudiomodel)]|false|none|none|
+|object|string|false|none|none|
+
+<h2 id="tocS_response.LMStudioModel">response.LMStudioModel</h2>
+<!-- backwards compatibility -->
+<a id="schemaresponse.lmstudiomodel"></a>
+<a id="schema_response.LMStudioModel"></a>
+<a id="tocSresponse.lmstudiomodel"></a>
+<a id="tocsresponse.lmstudiomodel"></a>
+
+```json
+{
+  "arch": "string",
+  "compatibility_type": "string",
+  "id": "string",
+  "max_context_length": 0,
+  "object": "string",
+  "publisher": "string",
+  "quantization": "string",
+  "state": "string",
+  "type": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|arch|string|false|none|none|
+|compatibility_type|string|false|none|none|
+|id|string|false|none|none|
+|max_context_length|integer|false|none|none|
+|object|string|false|none|none|
+|publisher|string|false|none|none|
+|quantization|string|false|none|none|
+|state|string|false|none|none|
+|type|string|false|none|none|
 
 <h2 id="tocS_response.OllamaModel">response.OllamaModel</h2>
 <!-- backwards compatibility -->
@@ -834,7 +1252,6 @@ This operation does not require authentication
     "family": "string",
     "format": "string",
     "parameter_size": "string",
-    "parent_model": "string",
     "quantization_level": "string"
   },
   "digest": "string",
@@ -885,7 +1302,6 @@ This operation does not require authentication
         "family": "string",
         "format": "string",
         "parameter_size": "string",
-        "parent_model": "string",
         "quantization_level": "string"
       },
       "digest": "string",
