@@ -1,8 +1,19 @@
-FROM golang:1.25-alpine as go-alpine
+# Build arguments for multi-platform builds
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS go-alpine
 RUN apk --no-cache add tzdata
 COPY . /go/src
 WORKDIR /go/src
-RUN go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o main .
+
+# Build for the target platform
+ARG TARGETOS
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o main .
 
 
 FROM scratch
