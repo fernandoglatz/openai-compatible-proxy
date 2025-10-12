@@ -24,6 +24,18 @@ lm-studio:
     max-retries: 10
     retry-wait: 5s
 
+mqtt:
+  enabled: true
+  broker: "tcp://127.0.0.1:1883"
+  client-id: "openai-proxy-client"
+  username: "guest"
+  password: "guest"
+  topic: "system/suspend"
+  qos: 1
+  idle:
+    timeout: 10m
+    message: "suspend"
+
 log:
   level: TRACE
   format: TEXT

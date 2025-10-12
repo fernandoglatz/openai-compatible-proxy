@@ -47,6 +47,20 @@ type Config struct {
 		} `yaml:"wol"`
 	} `yaml:"lm-studio"`
 
+	MQTT struct {
+		Enabled  bool   `yaml:"enabled"`
+		Broker   string `yaml:"broker"`
+		ClientID string `yaml:"client-id"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+		Topic    string `yaml:"topic"`
+		QOS      byte   `yaml:"qos"`
+		Idle     struct {
+			Timeout time.Duration `yaml:"timeout"`
+			Message string        `yaml:"message"`
+		} `yaml:"idle"`
+	} `yaml:"mqtt"`
+
 	Log struct {
 		Level   string        `yaml:"level"`
 		Format  format.Format `yaml:"format"`

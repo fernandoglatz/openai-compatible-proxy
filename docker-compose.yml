@@ -46,6 +46,25 @@ services:
       options:
         max-size: "50m"
 
+  mqtt:
+    image: eclipse-mosquitto:2
+    hostname: mqtt
+    ports:
+     - "1883:1883"
+     - "9001:9001"
+    volumes:
+      - mqtt-data:/mosquitto/data
+      - mqtt-logs:/mosquitto/log
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+
 volumes:
   mongodb-data:
   redis-data:
+  mqtt-data:
+  mqtt-logs:

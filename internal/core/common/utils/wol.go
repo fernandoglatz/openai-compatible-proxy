@@ -1,4 +1,4 @@
-package wol
+package utils
 
 import (
 	"context"

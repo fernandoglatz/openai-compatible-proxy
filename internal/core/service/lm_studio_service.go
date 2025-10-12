@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/exceptions"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
-	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/wol"
 	"fernandoglatz/openai-compatible-proxy/internal/core/entity"
 	"fernandoglatz/openai-compatible-proxy/internal/core/model/dto"
 	"fernandoglatz/openai-compatible-proxy/internal/core/port/service"
@@ -161,7 +161,7 @@ func (service *LMStudioService) tryWakeOnLAN(ctx context.Context) error {
 
 	log.Info(ctx).Msg("LM Studio host appears to be offline. Attempting Wake-on-LAN...")
 
-	err := wol.WakeOnLAN(ctx, wolConfig.MacAddress, wolConfig.BroadcastAddress)
+	err := utils.WakeOnLAN(ctx, wolConfig.MacAddress, wolConfig.BroadcastAddress)
 	if err != nil {
 		log.Error(ctx).Msg(fmt.Sprintf("Failed to send WOL packet: %v", err))
 		return err
@@ -230,6 +230,9 @@ func (service *LMStudioService) doRequestWithWOL(ctx context.Context, req *http.
 
 // ProxyRequest forwards a request to LM Studio API with appropriate headers and body
 func (service *LMStudioService) ProxyRequest(ctx context.Context, method string, path string, requestBody []byte, headers http.Header) ([]byte, int, error) {
+	// Record activity for idle monitoring
+	GetIdleMonitor().RecordActivity()
+
 	log.Info(ctx).Msg(fmt.Sprintf("Proxying %s request to LM Studio at path: %s", method, path))
 
 	// Construct URL - using the base URL from LMStudioAPI

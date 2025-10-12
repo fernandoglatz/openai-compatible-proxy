@@ -5,6 +5,7 @@ import (
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
 	"fernandoglatz/openai-compatible-proxy/internal/core/server"
+	"fernandoglatz/openai-compatible-proxy/internal/core/service"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/config"
 
 	"github.com/joho/godotenv"
@@ -42,6 +43,14 @@ func main() {
 	if err != nil {
 		log.Fatal(ctx).Msg(err.Error())
 	}
+
+	err = utils.ConnectMQTT(ctx)
+	if err != nil {
+		log.Fatal(ctx).Msg(err.Error())
+	}
+
+	// Start idle monitor
+	service.GetIdleMonitor().Start(ctx)
 
 	err = server.Setup(ctx)
 	if err != nil {
