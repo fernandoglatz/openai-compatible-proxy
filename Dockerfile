@@ -6,8 +6,14 @@ ARG TARGETARCH
 
 FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS go-alpine
 RUN apk --no-cache add tzdata
-COPY . /go/src
 WORKDIR /go/src
+
+# Copy go.mod and go.sum first for better layer caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
 
 # Build for the target platform
 ARG TARGETOS
