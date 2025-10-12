@@ -26,7 +26,7 @@ lm-studio:
 
 mqtt:
   enabled: true
-  broker: "tcp://127.0.0.1:1883"
+  broker: "tcp://mqtt:1883"
   client-id: "openai-compatible-proxy"
   username: "guest"
   password: "guest"
