@@ -108,42 +108,45 @@ func (controller *OllamaController) convertToOllamaResponse(models []entity.Mode
 	var ollamaModels []response.OllamaModel
 
 	for _, model := range models {
-		if model.Type == "llm" || model.Type == "vlm" {
-			modifiedAt := model.UpdatedAt.Format(time.RFC3339)
+		modifiedAt := model.UpdatedAt.Format(time.RFC3339)
 
-			family := model.Name
-			if idx := strings.Index(model.Name, "/"); idx != -1 {
-				family = model.Name[:idx]
-			}
-
-			paramSize := extractParameterSize(model.Name)
-
-			details := response.Details{
-				Format:            model.Type,
-				Family:            family,
-				Families:          []string{family},
-				ParameterSize:     paramSize,
-				QuantizationLevel: model.Quantization,
-			}
-
-			digest := fmt.Sprintf("%x", sha256.Sum256([]byte(model.Name)))
-
-			capabilities := []string{"completion", "chat", "tools"}
-			if model.Type == "vlm" {
-				capabilities = append(capabilities, "vision")
-			}
-
-			ollamaModels = append(ollamaModels, response.OllamaModel{
-				Name:         model.Name,
-				Model:        model.Name,
-				ModifiedAt:   modifiedAt,
-				Size:         0,
-				Digest:       digest,
-				Details:      details,
-				Capabilities: capabilities,
-				ModelInfo:    map[string]string{"general.architecture": model.Arch},
-			})
+		family := model.Name
+		if idx := strings.Index(model.Name, "/"); idx != -1 {
+			family = model.Name[:idx]
 		}
+
+		paramSize := extractParameterSize(model.Name)
+
+		details := response.Details{
+			Format:            model.Type,
+			Family:            family,
+			Families:          []string{family},
+			ParameterSize:     paramSize,
+			QuantizationLevel: model.Quantization,
+		}
+
+		digest := fmt.Sprintf("%x", sha256.Sum256([]byte(model.Name)))
+
+		var capabilities []string
+		switch model.Type {
+		case "llm":
+			capabilities = []string{"completion", "chat", "tools"}
+		case "vlm":
+			capabilities = []string{"completion", "chat", "tools", "vision"}
+		default:
+			capabilities = []string{"embedding"}
+		}
+
+		ollamaModels = append(ollamaModels, response.OllamaModel{
+			Name:         model.Name,
+			Model:        model.Name,
+			ModifiedAt:   modifiedAt,
+			Size:         0,
+			Digest:       digest,
+			Details:      details,
+			Capabilities: capabilities,
+			ModelInfo:    map[string]string{"general.architecture": model.Arch},
+		})
 	}
 
 	return response.OllamaResponse{

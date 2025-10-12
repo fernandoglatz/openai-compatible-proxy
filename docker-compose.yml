@@ -55,6 +55,7 @@ services:
     volumes:
       - mqtt-data:/mosquitto/data
       - mqtt-logs:/mosquitto/log
+      - ./mosquitto/config:/mosquitto/config
     restart: unless-stopped
     environment:
       - TZ=${TZ}
