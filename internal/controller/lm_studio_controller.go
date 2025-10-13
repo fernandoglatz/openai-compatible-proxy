@@ -75,7 +75,7 @@ func (controller *LMStudioController) GetModel(ginCtx *gin.Context) {
 }
 
 func (controller *LMStudioController) convertToLMStudioListResponse(models []entity.Model) response.LMStudioListResponse {
-	var lmStudioModels []response.LMStudioModel
+	lmStudioModels := make([]response.LMStudioModel, 0)
 
 	for _, model := range models {
 		lmStudioModels = append(lmStudioModels, controller.convertToLMStudioModel(model))

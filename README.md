@@ -121,7 +121,7 @@ docker pull ghcr.io/fernandoglatz/openai-compatible-proxy:latest
 docker run -d \
   --name openai-compatible-proxy \
   -p 8080:8080 \
-  -v $(pwd)/application.yml:/app/conf/application.yml:ro \
+  -v ./conf:/app/conf \
   ghcr.io/fernandoglatz/openai-compatible-proxy:latest
 ```
 

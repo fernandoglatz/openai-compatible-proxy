@@ -51,7 +51,7 @@ func (controller *OpenAIController) ListModels(ginCtx *gin.Context) {
 }
 
 func (controller *OpenAIController) convertToOpenAIListResponse(models []entity.Model) response.OpenAIListResponse {
-	var openAIModels []response.OpenAIModel
+	openAIModels := make([]response.OpenAIModel, 0)
 
 	for _, model := range models {
 		openAIModels = append(openAIModels, controller.convertToOpenAIModel(model))

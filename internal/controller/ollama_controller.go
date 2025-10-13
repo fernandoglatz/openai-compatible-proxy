@@ -105,7 +105,7 @@ func (controller *OllamaController) Show(ginCtx *gin.Context) {
 }
 
 func (controller *OllamaController) convertToOllamaResponse(models []entity.Model) response.OllamaResponse {
-	var ollamaModels []response.OllamaModel
+	ollamaModels := make([]response.OllamaModel, 0)
 
 	for _, model := range models {
 		modifiedAt := model.UpdatedAt.Format(time.RFC3339)

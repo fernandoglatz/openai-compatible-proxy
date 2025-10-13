@@ -9,9 +9,8 @@ services:
     restart: unless-stopped
     environment:
       - TZ=${TZ}
-    depends_on:
-      - mongo
-      - redis
+    volumes:
+      - ./conf:/app/conf
     logging:
       driver: "json-file"
       options:
