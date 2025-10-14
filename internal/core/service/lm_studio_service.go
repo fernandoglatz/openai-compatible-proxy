@@ -17,6 +17,8 @@ import (
 	"fernandoglatz/openai-compatible-proxy/internal/core/port/service"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/api"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/config"
+
+	"github.com/gin-gonic/gin"
 )
 
 // LMStudioService handles interaction with LM Studio and model persistence
@@ -228,8 +230,8 @@ func (service *LMStudioService) doRequestWithWOL(ctx context.Context, req *http.
 	return nil, err
 }
 
-// ProxyRequest forwards a request to LM Studio API with appropriate headers and body
-func (service *LMStudioService) ProxyRequest(ctx context.Context, method string, path string, requestBody []byte, headers http.Header) ([]byte, int, error) {
+// ProxyRequestStreaming forwards a request to LM Studio API with streaming support
+func (service *LMStudioService) ProxyRequestStreaming(ctx context.Context, ginCtx *gin.Context, method string, path string, requestBody []byte, headers http.Header) error {
 	// Record activity for idle monitoring
 	GetIdleMonitor().RecordActivity()
 
@@ -243,7 +245,7 @@ func (service *LMStudioService) ProxyRequest(ctx context.Context, method string,
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		log.Error(ctx).Msg(fmt.Sprintf("Failed to create request: %v", err))
-		return []byte(`{"error": "failed to create request"}`), http.StatusInternalServerError, err
+		return err
 	}
 
 	// Copy headers from the original request
@@ -262,17 +264,33 @@ func (service *LMStudioService) ProxyRequest(ctx context.Context, method string,
 	resp, err := service.doRequestWithWOL(ctx, req)
 	if err != nil {
 		log.Error(ctx).Msg(fmt.Sprintf("Failed to send request to LM Studio: %v", err))
-		return []byte(`{"error": "failed to send request to LM Studio"}`), http.StatusBadGateway, err
+		return err
 	}
 	defer resp.Body.Close()
 
-	// Read response body
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Error(ctx).Msg(fmt.Sprintf("Failed to read response body: %v", err))
-		return []byte(`{"error": "failed to read response"}`), http.StatusInternalServerError, err
+	// Copy response headers to client
+	for key, values := range resp.Header {
+		for _, value := range values {
+			ginCtx.Header(key, value)
+		}
 	}
 
-	// Return response body and status code
-	return responseBody, resp.StatusCode, nil
+	// Set the status code
+	ginCtx.Status(resp.StatusCode)
+
+	// Stream the response body
+	// Use io.Copy to efficiently stream data from LM Studio to the client
+	_, err = io.Copy(ginCtx.Writer, resp.Body)
+	if err != nil {
+		log.Error(ctx).Msg(fmt.Sprintf("Error streaming response: %v", err))
+		return err
+	}
+
+	// Flush any buffered data
+	if flusher, ok := ginCtx.Writer.(http.Flusher); ok {
+		flusher.Flush()
+	}
+
+	log.Info(ctx).Msg("Successfully streamed response from LM Studio")
+	return nil
 }

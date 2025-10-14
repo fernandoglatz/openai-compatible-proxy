@@ -23,16 +23,6 @@ type Config struct {
 			Uri      string `yaml:"uri"`
 			Database string `yaml:"database"`
 		} `yaml:"mongo"`
-
-		Redis struct {
-			Address  string `yaml:"address"`
-			Password string `yaml:"password"`
-			Db       int    `yaml:"db"`
-
-			TTL struct {
-				Model time.Duration `yaml:"model"`
-			} `yaml:"ttl"`
-		} `yaml:"redis"`
 	} `yaml:"data"`
 
 	LMStudio struct {

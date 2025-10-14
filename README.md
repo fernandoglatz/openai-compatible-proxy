@@ -9,7 +9,6 @@ This is a Go-based proxy server that provides an OpenAI-compatible API interface
 - **LM Studio Integration**: Fetches and synchronizes models from LM Studio
 - **Ollama Support**: Provides Ollama-compatible API endpoints
 - **MongoDB Storage**: Persistent storage for model information
-- **Redis Caching**: Caching for improved performance
 - **Docker Support**: Easy deployment with Docker and docker-compose
 
 ## Architecture
@@ -62,13 +61,6 @@ data:
     uri: "mongodb://mongo:27017"
     database: "openai-compatible-proxy"
 
-  redis:
-    address: "redis:6379"
-    password: ""
-    db: 0
-    ttl:
-      model: 24h
-
 lm-studio:
   url: "http://localhost:1234"
   timeout: 600s
@@ -102,10 +94,90 @@ log:
 - **server.listening**: The address and port the server listens on
 - **server.context-path**: Base path for all API endpoints
 - **data.mongo**: MongoDB connection settings for persistent storage
-- **data.redis**: Redis connection settings for caching
 - **lm-studio**: LM Studio integration settings including Wake-on-LAN support
+  - **url**: The URL where LM Studio is running
+  - **timeout**: Request timeout duration
+  - **wol.enabled**: Enable/disable Wake-on-LAN functionality
+  - **wol.mac-address**: MAC address of the machine running LM Studio
+  - **wol.broadcast-address**: Network broadcast address (default: 255.255.255.255:9)
+  - **wol.max-retries**: Number of connection retry attempts after sending WOL packet
+  - **wol.retry-wait**: Time to wait between retry attempts
 - **mqtt**: MQTT broker settings for idle monitoring and system suspend
 - **log**: Logging configuration (level, format, colors)
+
+### Wake-on-LAN (WOL) Feature
+
+The proxy includes automatic Wake-on-LAN support to wake up sleeping LM Studio servers. When enabled, if the LM Studio server is unreachable, the proxy will:
+
+1. Send a WOL magic packet to wake the machine
+2. Wait for the configured retry duration
+3. Retry the connection for the configured number of attempts
+
+#### Prerequisites for WOL:
+
+1. **Target Machine Configuration**:
+   - Enable Wake-on-LAN in BIOS/UEFI settings
+   - Enable Wake-on-LAN in the network adapter settings (Windows/Linux)
+   - Keep the network cable connected or configure WOL for wireless (if supported)
+
+2. **Network Configuration**:
+   - Find the MAC address of the target machine's network adapter
+   - Ensure both machines are on the same local network (or configure network to forward broadcasts)
+
+3. **Docker Configuration** (CRITICAL):
+   - The backend service **must use host networking mode** for WOL to work in Docker
+   - When using host networking, update the MongoDB and MQTT URIs to use `localhost` instead of service names
+   - This is already configured in the provided `docker-compose.yml` and `application.yml` files
+
+#### Finding Your MAC Address:
+
+**Linux**:
+```bash
+ip link show
+# or
+ifconfig
+```
+
+**Windows**:
+```cmd
+ipconfig /all
+```
+
+**macOS**:
+```bash
+ifconfig
+# or in System Preferences > Network > Advanced > Hardware
+```
+
+#### WOL Configuration Example:
+
+```yaml
+lm-studio:
+  url: "http://localhost:1234"
+  timeout: 600s
+  wol:
+    enabled: true
+    mac-address: "00:00:00:00:00:00"  # Replace with your machine's MAC address
+    broadcast-address: "255.255.255.255:9"  # Default broadcast address
+    max-retries: 10  # Retry up to 10 times
+    retry-wait: 5s   # Wait 5 seconds between retries
+```
+
+#### Testing WOL:
+
+1. Ensure your LM Studio machine is configured for WOL
+2. Put the machine to sleep or shut it down (with WOL enabled)
+3. Make a request to the proxy (e.g., list models or create a completion)
+4. Check the logs to verify the WOL packet was sent
+5. The machine should wake up and the proxy should connect successfully after a few retries
+
+#### Important Notes:
+
+- **Docker Host Networking**: The docker-compose.yml uses `network_mode: "host"` for the backend service to allow WOL packets to reach the physical network
+- **Service Discovery**: When using host networking, the backend connects to other services via `localhost` instead of Docker service names
+- **Firewall**: Ensure no firewall is blocking UDP port 9 (or your configured WOL port)
+- **Network Switches**: Some network switches may block broadcast packets; ensure your network equipment supports WOL
+- **Wake from S3 vs S4/S5**: WOL typically works best with S3 sleep state; deeper sleep states (S4/S5) may require additional BIOS configuration
 
 ### Running the Application
 
@@ -129,7 +201,7 @@ docker run -d \
 
 #### Option 2: Docker Compose (Full Stack)
 
-1. Start the full stack (backend, MongoDB, Redis, and MQTT):
+1. Start the full stack (backend, MongoDB and MQTT):
    ```bash
    docker-compose up -d
    ```

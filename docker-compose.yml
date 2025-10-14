@@ -6,6 +6,7 @@ services:
     hostname: backend
     ports:
       - "8080:8080"
+    #network_mode: "host"
     restart: unless-stopped
     environment:
       - TZ=${TZ}
@@ -31,21 +32,6 @@ services:
       options:
         max-size: "50m"
 
-  redis:
-    image: redis:7-alpine
-    hostname: redis
-    ports:
-     - "0.0.0.0:6379:6379"
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ}
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-
   mqtt:
     image: eclipse-mosquitto:2
     hostname: mqtt
@@ -66,6 +52,5 @@ services:
 
 volumes:
   mongodb-data:
-  redis-data:
   mqtt-data:
   mqtt-logs:

@@ -42,14 +42,11 @@ func (controller *LMStudioProxyController) ProxyRequest(ginCtx *gin.Context) {
 		return
 	}
 
-	// Forward to LM Studio using the service's proxy functionality
-	responseBody, statusCode, err := controller.lmStudioService.ProxyRequest(ctx, ginCtx.Request.Method, path, body, ginCtx.Request.Header)
+	// Forward to LM Studio using the service's streaming proxy functionality
+	err = controller.lmStudioService.ProxyRequestStreaming(ctx, ginCtx, ginCtx.Request.Method, path, body, ginCtx.Request.Header)
 	if err != nil {
 		log.Error(ctx).Msg(fmt.Sprintf("Failed to forward request to LM Studio: %v", err))
-		ginCtx.JSON(statusCode, gin.H{"error": "failed to forward request to LM Studio"})
+		ginCtx.JSON(http.StatusBadGateway, gin.H{"error": "failed to forward request to LM Studio"})
 		return
 	}
-
-	// Return the response from LM Studio
-	ginCtx.Data(statusCode, gin.MIMEJSON, responseBody)
 }

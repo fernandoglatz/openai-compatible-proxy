@@ -39,11 +39,6 @@ func main() {
 		log.Fatal(ctx).Msg(err.Error())
 	}
 
-	err = utils.ConnectToRedis(ctx)
-	if err != nil {
-		log.Fatal(ctx).Msg(err.Error())
-	}
-
 	err = utils.ConnectMQTT(ctx)
 	if err != nil {
 		log.Fatal(ctx).Msg(err.Error())

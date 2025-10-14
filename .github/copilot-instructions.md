@@ -22,7 +22,6 @@ This is a Go-based microservice that implements a layered architecture following
 ### 2. Data Storage
 
 - **MongoDB**: Primary storage for LLM models with metadata
-- **Redis**: Caching layer for performance optimization
 
 ### 3. Configuration
 
@@ -50,7 +49,6 @@ Configuration is managed through:
 
 1. Configure `conf/application.yml` with appropriate connections:
    - MongoDB connection string
-   - Redis connection settings
    - LM Studio API URL and timeout
 2. Set environment variables (if needed)
 3. Build the application: `go build -o main .`
@@ -66,7 +64,6 @@ Configuration is managed through:
 ## Integration Points
 
 - **MongoDB**: Used for storing model definitions with metadata
-- **Redis**: Used for caching frequently accessed data
 - **LM Studio**: Primary LLM provider that this proxy forwards requests to
 - **Ollama API**: Provides compatibility layer for Ollama-compatible clients
 

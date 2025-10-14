@@ -7,13 +7,6 @@ data:
     uri: "mongodb://mongo:27017"
     database: "openai-compatible-proxy"
 
-  redis:
-    address: "redis:6379"
-    password: ""
-    db: 0
-    ttl:
-      model: 24h
-
 lm-studio:
   url: "http://127.0.0.1:11434"
   timeout: 600s
