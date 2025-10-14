@@ -16,6 +16,7 @@ type IdleMonitor struct {
 	ticker       *time.Ticker
 	stopChan     chan bool
 	isRunning    bool
+	suspendSent  bool // Track if suspend message has been sent
 }
 
 var monitor *IdleMonitor
@@ -83,23 +84,25 @@ func (im *IdleMonitor) Stop(ctx context.Context) {
 	im.isRunning = false
 }
 
-// RecordActivity updates the last activity timestamp
+// RecordActivity updates the last activity timestamp and resets suspend flag
 func (im *IdleMonitor) RecordActivity() {
 	im.mu.Lock()
 	defer im.mu.Unlock()
 	im.lastActivity = time.Now()
+	im.suspendSent = false // Reset the suspend flag when there's activity
 }
 
 // checkIdle checks if the system has been idle for too long
 func (im *IdleMonitor) checkIdle(ctx context.Context) {
 	im.mu.RLock()
 	lastActivity := im.lastActivity
+	suspendSent := im.suspendSent
 	im.mu.RUnlock()
 
 	mqttConfig := config.ApplicationConfig.MQTT
 	idleDuration := time.Since(lastActivity)
 
-	if idleDuration >= mqttConfig.Idle.Timeout {
+	if idleDuration >= mqttConfig.Idle.Timeout && !suspendSent {
 		log.Info(ctx).Msg(fmt.Sprintf("System has been idle for %v (threshold: %v) - sending suspend message",
 			idleDuration.Round(time.Second), mqttConfig.Idle.Timeout))
 
@@ -107,10 +110,13 @@ func (im *IdleMonitor) checkIdle(ctx context.Context) {
 		if err != nil {
 			log.Error(ctx).Msg(fmt.Sprintf("Failed to publish idle suspend message: %v", err))
 		} else {
-			// Reset the timer after sending the message to avoid spamming
-			im.RecordActivity()
+			// Mark suspend message as sent - won't send again until activity is detected
+			im.mu.Lock()
+			im.suspendSent = true
+			im.mu.Unlock()
+			log.Info(ctx).Msg("Suspend message sent - will not send again until system becomes active")
 		}
-	} else {
+	} else if idleDuration < mqttConfig.Idle.Timeout {
 		timeUntilIdle := mqttConfig.Idle.Timeout - idleDuration
 		log.Debug(ctx).Msg(fmt.Sprintf("System is active - time until idle: %v", timeUntilIdle.Round(time.Second)))
 	}

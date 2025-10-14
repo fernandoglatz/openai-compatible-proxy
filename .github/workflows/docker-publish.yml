@@ -175,3 +175,91 @@ jobs:
                 ${tag}-arm64
             fi
           done
+
+  # Create GitHub Release (only for tags, after successful container publish)
+  release:
+    needs: create-manifest
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Build binaries
+        run: |
+          # Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -o bin/openai-compatible-proxy-linux-amd64 .
+
+          # Linux ARM64
+          GOOS=linux GOARCH=arm64 go build -o bin/openai-compatible-proxy-linux-arm64 .
+
+          # Darwin AMD64
+          GOOS=darwin GOARCH=amd64 go build -o bin/openai-compatible-proxy-darwin-amd64 .
+
+          # Darwin ARM64
+          GOOS=darwin GOARCH=arm64 go build -o bin/openai-compatible-proxy-darwin-arm64 .
+
+          # Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -o bin/openai-compatible-proxy-windows-amd64.exe .
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --abbrev=0 --tags ${GITHUB_REF}^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            # If no previous tag, get all commits
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --reverse)
+          else
+            # Get commits between previous tag and current tag
+            CHANGELOG=$(git log ${PREV_TAG}..${GITHUB_REF} --pretty=format:"- %s (%h)" --reverse)
+          fi
+
+          # Save to output
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## What's Changed
+
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## Docker
+
+            Multi-architecture Docker images are available:
+
+            ```bash
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+
+            Supported platforms: `linux/amd64`, `linux/arm64`
+
+            ## Installation
+
+            Download the appropriate binary for your platform from the assets below.
+          files: |
+            bin/openai-compatible-proxy-linux-amd64
+            bin/openai-compatible-proxy-linux-arm64
+            bin/openai-compatible-proxy-darwin-amd64
+            bin/openai-compatible-proxy-darwin-arm64
+            bin/openai-compatible-proxy-windows-amd64.exe
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
