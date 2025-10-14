@@ -190,28 +190,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: "go.mod"
-
-      - name: Build binaries
-        run: |
-          # Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -o bin/openai-compatible-proxy-linux-amd64 .
-
-          # Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -o bin/openai-compatible-proxy-linux-arm64 .
-
-          # Darwin AMD64
-          GOOS=darwin GOARCH=amd64 go build -o bin/openai-compatible-proxy-darwin-amd64 .
-
-          # Darwin ARM64
-          GOOS=darwin GOARCH=arm64 go build -o bin/openai-compatible-proxy-darwin-arm64 .
-
-          # Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -o bin/openai-compatible-proxy-windows-amd64.exe .
-
       - name: Generate changelog
         id: changelog
         run: |
@@ -240,7 +218,7 @@ jobs:
 
             ${{ steps.changelog.outputs.changelog }}
 
-            ## Docker
+            ## Docker Image
 
             Multi-architecture Docker images are available:
 
@@ -250,15 +228,17 @@ jobs:
 
             Supported platforms: `linux/amd64`, `linux/arm64`
 
-            ## Installation
+            ### Docker Compose
 
-            Download the appropriate binary for your platform from the assets below.
-          files: |
-            bin/openai-compatible-proxy-linux-amd64
-            bin/openai-compatible-proxy-linux-arm64
-            bin/openai-compatible-proxy-darwin-amd64
-            bin/openai-compatible-proxy-darwin-arm64
-            bin/openai-compatible-proxy-windows-amd64.exe
+            ```yaml
+            services:
+              openai-proxy:
+                image: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+                ports:
+                  - "8080:8080"
+                volumes:
+                  - ./conf:/app/conf
+            ```
           draft: false
           prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
         env:
