@@ -8,7 +8,7 @@ data:
     database: "openai-compatible-proxy"
 
 lm-studio:
-  url: "http://127.0.0.1:11434"
+  url: "http://localhost:1234"
   timeout: 600s
   wol:
     enabled: true
