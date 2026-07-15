@@ -33,9 +33,13 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 
 	healthController := controller.NewHealthController()
 
+	// Built once and shared by every authenticated group: the constructor reports the
+	// configured-token count, so calling it per group would repeat that line on startup.
+	authenticationMiddleware := controller.AuthenticationMiddleware(ctx)
+
 	// OpenAI routes - authenticated, use middleware to handle /v1/models specifically before proxy
 	routerV1 := router.Group("/v1")
-	routerV1.Use(controller.AuthenticationMiddleware(ctx))
+	routerV1.Use(authenticationMiddleware)
 	routerV1.Use(func(c *gin.Context) {
 		// Handle /v1/models specifically
 		if c.Request.URL.Path == "/v1/models" && c.Request.Method == "GET" {
@@ -81,7 +85,7 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	// LM Studio native v1 API routes (LM Studio 0.4.0+). Authenticated as a whole group:
 	// unlike v0, this namespace exposes mutating endpoints (load, unload, download).
 	routerAPIV1 := routerAPI.Group("/v1")
-	routerAPIV1.Use(controller.AuthenticationMiddleware(ctx))
+	routerAPIV1.Use(authenticationMiddleware)
 	routerAPIV1.Use(interceptGet("/api/v1/models", lmStudioV1Controller.ListModels))
 	// Proxy catches chat, models/load, models/unload, models/download, models/download/status
 	routerAPIV1.Any("/*any", lmStudioProxyController.ProxyRequest)
