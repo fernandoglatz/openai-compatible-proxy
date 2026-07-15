@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils"
+	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/constants"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/exceptions"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
 	"fernandoglatz/openai-compatible-proxy/internal/core/entity"
@@ -111,6 +112,11 @@ func (service *LMStudioService) convertToInternalModel(lmModel dto.LMStudioModel
 		Quantization:      lmModel.Quantization,
 		State:             lmModel.State,
 		MaxContextLength:  lmModel.MaxContextLength,
+		DisplayName:       lmModel.DisplayName,
+		SizeBytes:         lmModel.SizeBytes,
+		ParamsString:      lmModel.ParamsString,
+		Capabilities:      lmModel.Capabilities,
+		LoadedInstanceIDs: lmModel.LoadedInstanceIDs,
 	}
 
 	return model
@@ -232,13 +238,16 @@ func (service *LMStudioService) doRequestWithWOL(ctx context.Context, req *http.
 
 // ProxyRequestStreaming forwards a request to LM Studio API with streaming support
 func (service *LMStudioService) ProxyRequestStreaming(ctx context.Context, ginCtx *gin.Context, method string, path string, requestBody []byte, headers http.Header) error {
-	// Record activity for idle monitoring
-	GetIdleMonitor().RecordActivity()
-
 	log.Info(ctx).Msg(fmt.Sprintf("Proxying %s request to LM Studio at path: %s", method, path))
 
-	// Construct URL - using the base URL from LMStudioAPI
+	// Construct URL - using the base URL from LMStudioAPI. The raw (already-encoded) query
+	// string is preserved verbatim: most proxied endpoints are POSTs with a body and never
+	// carry one, but GET /api/v1/models/download/status identifies its job by query
+	// parameter, so dropping it silently breaks that endpoint.
 	url := fmt.Sprintf("%s%s", service.lmStudioAPI.GetBaseURL(), path)
+	if rawQuery := ginCtx.Request.URL.RawQuery; rawQuery != "" {
+		url = fmt.Sprintf("%s?%s", url, rawQuery)
+	}
 	log.Info(ctx).Msg(fmt.Sprintf("Forwarding request to: %s", url))
 
 	// Create HTTP request
@@ -248,11 +257,22 @@ func (service *LMStudioService) ProxyRequestStreaming(ctx context.Context, ginCt
 		return err
 	}
 
-	// Copy headers from the original request
+	// Copy headers from the original request, dropping the caller credentials so
+	// the proxy tokens are never exposed to LM Studio
 	for key, values := range headers {
+		if strings.EqualFold(key, constants.AUTHORIZATION) {
+			continue
+		}
+
 		for _, value := range values {
 			req.Header.Add(key, value)
 		}
+	}
+
+	// Authenticate against LM Studio with its own configured key
+	apiKey := config.ApplicationConfig.LMStudio.APIKey
+	if utils.IsNotEmptyStr(apiKey) {
+		req.Header.Set(constants.AUTHORIZATION, constants.BEARER_PREFIX+apiKey)
 	}
 
 	// Set content-type if not already set

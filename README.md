@@ -4,18 +4,17 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/fernandoglatz/openai-compatible-proxy)](go.mod)
 
-A smart proxy service that provides unified API access to [LM Studio](https://lmstudio.ai/) through multiple API formats: OpenAI, Ollama, and LM Studio native. Built with energy efficiency in mind, featuring automatic Wake-on-LAN for sleeping hosts and intelligent idle monitoring.
+A smart proxy service that provides unified API access to [LM Studio](https://lmstudio.ai/) through multiple API formats: OpenAI, Ollama, and LM Studio native. Built with energy efficiency in mind, featuring automatic Wake-on-LAN for sleeping hosts.
 
 ## ✨ Features
 
 - 🔄 **Multi-API Support**: Translate between OpenAI, Ollama, and LM Studio API formats
 - 🌊 **Streaming Support**: Efficient token streaming for real-time LLM responses
 - 🔌 **Wake-on-LAN**: Automatically wake sleeping LM Studio hosts on-demand
-- ⚡ **Idle Monitoring**: Send MQTT suspend messages after inactivity to save energy (pairs with [mqtt-system-agent](https://github.com/fernandoglatz/mqtt-system-agent))
 - 💾 **Model Caching**: MongoDB-based model metadata persistence
 - 📚 **Swagger Documentation**: Interactive API documentation at `/swagger-ui/`
 - 🐳 **Docker Support**: Multi-platform images (amd64/arm64) with Docker Compose
-- 🔒 **Configurable Security**: Support for basic auth and API key authentication
+- 🔒 **Token Authentication**: Multiple revocable Bearer tokens guarding the OpenAI API
 
 ## 🚀 Quick Start
 
@@ -29,8 +28,14 @@ cd openai-compatible-proxy
 
 2. Configure `conf/application.yml`:
 ```yaml
+openai:
+  api-keys:                 # Tokens accepted by the proxy on /v1/* and /api/v1/*
+    - "sk-my-first-token"
+    - "sk-my-second-token"
+
 lm-studio:
-  url: "http://your-lm-studio-host:11434"  # Update with your LM Studio URL
+  url: "http://your-lm-studio-host:1234"   # Update with your LM Studio URL
+  api-key: ""                              # Only if your LM Studio requires one
   wol:
     enabled: true
     mac-address: "XX:XX:XX:XX:XX:XX"  # Your LM Studio host MAC address
@@ -49,8 +54,7 @@ docker-compose up -d
 
 **Prerequisites:**
 - Go 1.25 or later
-- MongoDB (optional, can be disabled)
-- Mosquitto MQTT (optional, can be disabled)
+- MongoDB (required — the app exits at startup if it cannot connect)
 
 ```bash
 # Install dependencies
@@ -66,12 +70,17 @@ go build -o bin/app .
 ## 📖 API Endpoints
 
 ### OpenAI Compatible API
+
+These routes require a Bearer token from `openai.api-keys` (see [Authentication](#-authentication)).
+
 ```bash
 # List models
-curl http://localhost:8080/v1/models
+curl http://localhost:8080/v1/models \
+  -H "Authorization: Bearer sk-my-first-token"
 
 # Chat completion (proxied to LM Studio)
 curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer sk-my-first-token" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "your-model",
@@ -102,6 +111,28 @@ curl http://localhost:8080/api/v0/models
 curl http://localhost:8080/api/v0/models/{model-id}
 ```
 
+### LM Studio native v1 API (LM Studio 0.4.0+)
+
+Authenticated — send a token from `openai.api-keys` when any are configured.
+
+```bash
+# List models (served from the local store, so it works while the host is asleep)
+curl http://localhost:8080/api/v1/models \
+  -H "Authorization: Bearer $TOKEN"
+
+# Load a model
+curl http://localhost:8080/api/v1/models/load \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "google/gemma-4-26b-a4b"}'
+
+# Chat (stateful; pass previous_response_id to continue a conversation)
+curl http://localhost:8080/api/v1/chat \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "google/gemma-4-26b-a4b", "messages": [{"role": "user", "content": "Hi"}]}'
+```
+
 ## ⚙️ Configuration
 
 All configuration is managed through `conf/application.yml`:
@@ -116,8 +147,12 @@ data:
     uri: "mongodb://mongo:27017"
     database: "openai-compatible-proxy"
 
+openai:
+  api-keys: []   # Tokens accepted by the proxy; empty disables authentication
+
 lm-studio:
   url: "http://localhost:1234"
+  api-key: ""    # Single token sent upstream to LM Studio
   timeout: 600s  # Long timeout for LLM generation
   wol:
     enabled: true
@@ -126,23 +161,46 @@ lm-studio:
     max-retries: 10
     retry-wait: 5s
 
-mqtt:
-  enabled: true
-  broker: "tcp://mqtt:1883"
-  client-id: "openai-compatible-proxy"
-  username: "guest"
-  password: "guest"
-  topic: "system/suspend"  # Must match topic in mqtt-system-agent
-  qos: 1
-  idle:
-    timeout: 10m  # Send suspend after 10 minutes of inactivity
-    message: "suspend"  # Message received by mqtt-system-agent
-
 log:
   level: TRACE  # DEBUG, INFO, WARN, ERROR
   format: TEXT  # TEXT or JSON
   colored: true
 ```
+
+## 🔐 Authentication
+
+The proxy accepts **multiple** tokens, so each client can have its own token that you
+can rotate or revoke independently. LM Studio upstream uses a **single** key.
+
+```yaml
+openai:
+  api-keys:
+    - "sk-laptop-token"
+    - "sk-phone-token"
+
+lm-studio:
+  api-key: ""   # optional, only if your LM Studio requires a key
+```
+
+Clients authenticate with a standard OpenAI Bearer token, so any OpenAI SDK works
+unchanged by pointing `base_url` at the proxy and `api_key` at one of your tokens:
+
+```bash
+curl http://localhost:8080/v1/models \
+  -H "Authorization: Bearer sk-laptop-token"
+```
+
+Behavior:
+
+- **Scope**: the `/v1/*` and `/api/v1/*` routes are authenticated. The Ollama routes
+  (`/api/tags`, `/api/show`, `/api/version`), the LM Studio legacy routes (`/api/v0/*`),
+  `/health`, and `/swagger-ui/` remain open.
+- **Empty `api-keys`**: authentication is disabled and a warning is logged at startup.
+- **Rejection**: a missing or unknown token gets `401` with an OpenAI-shaped error
+  body (`invalid_api_key`), which OpenAI SDK clients parse natively.
+- **Token isolation**: the caller's `Authorization` header is stripped before the
+  request is forwarded, and replaced with `lm-studio.api-key` when configured. Your
+  proxy tokens are never exposed to LM Studio.
 
 ### Environment Variables
 
@@ -157,9 +215,10 @@ The project follows a clean hexagonal architecture:
 internal/
 ├── controller/          # HTTP handlers (Gin)
 ├── core/
+│   ├── common/         # Route setup, logging, shared utils
 │   ├── entity/         # Domain entities
 │   ├── model/          # DTOs and requests/responses
-│   ├── port/           # Service interfaces
+│   ├── port/           # Service and repository interfaces
 │   ├── service/        # Business logic
 │   └── server/         # HTTP server setup
 └── infrastructure/
@@ -172,17 +231,14 @@ internal/
 
 - **Proxy Controller**: Forwards requests to LM Studio with streaming support
 - **LM Studio Service**: Handles WOL, retries, and model synchronization
-- **Idle Monitor**: Singleton service tracking activity and sending suspend messages via MQTT
 - **Model Service**: CRUD operations for model metadata in MongoDB
 
 ### Energy-Efficient Workflow
 
 1. **On Request**: If LM Studio host is asleep, proxy sends Wake-on-LAN magic packet
-2. **During Use**: Proxy forwards requests to LM Studio and resets idle timer
-3. **After Idle**: When `idle.timeout` expires, proxy publishes suspend message to MQTT
-4. **System Sleep**: [mqtt-system-agent](https://github.com/fernandoglatz/mqtt-system-agent) on LM Studio host receives message and suspends the system
+2. **During Use**: Proxy forwards requests to LM Studio
 
-This creates a fully automated power management cycle for your local LLM infrastructure.
+This lets the LM Studio host sleep when unused and wake on demand.
 
 ## 🔧 Development
 
@@ -224,10 +280,14 @@ docker buildx build --platform linux/amd64,linux/arm64 -t openai-compatible-prox
 
 ## 🔐 Security Considerations
 
-- The proxy supports basic authentication and API key authentication
-- Configure authentication in your reverse proxy or API gateway
+- Set `openai.api-keys` before exposing the proxy beyond localhost; when it is empty
+  the `/v1/*` and `/api/v1/*` routes are unauthenticated (see [Authentication](#-authentication))
+- Only `/v1/*` and `/api/v1/*` are authenticated. Put the Ollama (`/api/tags`, `/api/show`,
+  `/api/version`) and LM Studio legacy (`/api/v0/*`) routes behind a reverse proxy or
+  network isolation if they should not be public
+- Terminate TLS at a reverse proxy — over plain HTTP, Bearer tokens travel in cleartext
+- Treat `conf/application.yml` as a secret; do not commit real tokens
 - Use MongoDB authentication in production
-- Secure MQTT broker with proper credentials
 - Consider network isolation for LM Studio host
 
 ## 🤝 Contributing
@@ -244,16 +304,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-## � Related Projects
-
-- **[MQTT System Agent](https://github.com/fernandoglatz/mqtt-system-agent)** - Companion service that runs on your LM Studio host to receive MQTT suspend messages and automatically suspend the system after idle timeout. Cross-platform support for Linux and Windows with easy service installation.
-
-## �🙏 Acknowledgments
+## 🙏 Acknowledgments
 
 - [LM Studio](https://lmstudio.ai/) - Local LLM hosting
 - [Gin](https://github.com/gin-gonic/gin) - HTTP web framework
 - [MongoDB](https://www.mongodb.com/) - Database
-- [Eclipse Mosquitto](https://mosquitto.org/) - MQTT broker
 
 ## 📬 Support
 

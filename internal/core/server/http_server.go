@@ -33,6 +33,7 @@ func Setup(ctx context.Context) error {
 	engine.RedirectTrailingSlash = false
 	engine.Use(
 		controller.TraceMiddleware(),
+		controller.PathTraversalMiddleware(),
 		controller.LoggingMiddleware(),
 		controller.RecoveryMiddleware(ctx),
 	)

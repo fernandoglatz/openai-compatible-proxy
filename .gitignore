@@ -24,3 +24,6 @@ go.work
 
 # Build output
 bin/
+
+docs/superpowers
+.superpowers

@@ -25,8 +25,13 @@ type Config struct {
 		} `yaml:"mongo"`
 	} `yaml:"data"`
 
+	OpenAI struct {
+		APIKeys []string `yaml:"api-keys"`
+	} `yaml:"openai"`
+
 	LMStudio struct {
 		URL     string        `yaml:"url"`
+		APIKey  string        `yaml:"api-key"`
 		Timeout time.Duration `yaml:"timeout"`
 		WOL     struct {
 			Enabled          bool          `yaml:"enabled"`
@@ -36,20 +41,6 @@ type Config struct {
 			RetryWait        time.Duration `yaml:"retry-wait"`
 		} `yaml:"wol"`
 	} `yaml:"lm-studio"`
-
-	MQTT struct {
-		Enabled  bool   `yaml:"enabled"`
-		Broker   string `yaml:"broker"`
-		ClientID string `yaml:"client-id"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-		Topic    string `yaml:"topic"`
-		QOS      byte   `yaml:"qos"`
-		Idle     struct {
-			Timeout time.Duration `yaml:"timeout"`
-			Message string        `yaml:"message"`
-		} `yaml:"idle"`
-	} `yaml:"mqtt"`
 
 	Log struct {
 		Level   string        `yaml:"level"`

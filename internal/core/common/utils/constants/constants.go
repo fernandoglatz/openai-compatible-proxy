@@ -12,6 +12,10 @@ const (
 	ID         string = "id"
 	REQUEST_ID string = "REQUEST-ID"
 
+	AUTHORIZATION string = "Authorization"
+	BEARER_PREFIX string = "Bearer "
+	CONTENT_TYPE  string = "Content-Type"
+
 	ZERO = 0
 	ONE  = 1
 	TEN  = 10

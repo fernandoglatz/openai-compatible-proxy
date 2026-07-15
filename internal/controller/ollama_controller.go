@@ -2,6 +2,7 @@ package controller
 
 import (
 	"crypto/sha256"
+	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/constants"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
 	"fernandoglatz/openai-compatible-proxy/internal/core/entity"
 	"fernandoglatz/openai-compatible-proxy/internal/core/model/request"
@@ -115,7 +116,12 @@ func (controller *OllamaController) convertToOllamaResponse(models []entity.Mode
 			family = model.Name[:idx]
 		}
 
-		paramSize := extractParameterSize(model.Name)
+		// Prefer what the v1 sync recorded; fall back to guessing from the name for
+		// models stored by the v0 path, which carries no parameter metadata.
+		paramSize := model.ParamsString
+		if paramSize == "" {
+			paramSize = extractParameterSize(model.Name)
+		}
 
 		details := response.Details{
 			Format:            model.Type,
@@ -127,21 +133,25 @@ func (controller *OllamaController) convertToOllamaResponse(models []entity.Mode
 
 		digest := fmt.Sprintf("%x", sha256.Sum256([]byte(model.Name)))
 
-		var capabilities []string
-		switch model.Type {
-		case "llm":
-			capabilities = []string{"completion", "chat", "tools"}
-		case "vlm":
-			capabilities = []string{"completion", "chat", "tools", "vision"}
-		default:
-			capabilities = []string{"embedding"}
+		// The v1 sync records real capabilities. The type-based guess below is the v0
+		// fallback: it assumes every llm has tools, which is not always true.
+		capabilities := model.Capabilities
+		if len(capabilities) == constants.ZERO {
+			switch model.Type {
+			case "llm":
+				capabilities = []string{"completion", "chat", "tools"}
+			case "vlm":
+				capabilities = []string{"completion", "chat", "tools", "vision"}
+			default:
+				capabilities = []string{"embedding"}
+			}
 		}
 
 		ollamaModels = append(ollamaModels, response.OllamaModel{
 			Name:         model.Name,
 			Model:        model.Name,
 			ModifiedAt:   modifiedAt,
-			Size:         0,
+			Size:         model.SizeBytes,
 			Digest:       digest,
 			Details:      details,
 			Capabilities: capabilities,

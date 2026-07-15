@@ -1,5 +1,17 @@
 package response
 
+// OpenAIErrorResponse represents the error envelope returned by the OpenAI API
+type OpenAIErrorResponse struct {
+	Error OpenAIError `json:"error"`
+}
+
+// OpenAIError represents the error detail in the OpenAI format
+type OpenAIError struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
+	Code    string `json:"code"`
+}
+
 // OpenAIListResponse represents the response format for GET /v1/models endpoint
 type OpenAIListResponse struct {
 	Object string        `json:"object"`

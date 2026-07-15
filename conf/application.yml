@@ -7,8 +7,12 @@ data:
     uri: "mongodb://mongo:27017"
     database: "openai-compatible-proxy"
 
+openai:
+  api-keys: []
+
 lm-studio:
   url: "http://localhost:1234"
+  api-key: "lmstudio"
   timeout: 600s
   wol:
     enabled: true
@@ -16,18 +20,6 @@ lm-studio:
     broadcast-address: "255.255.255.255:9"
     max-retries: 10
     retry-wait: 5s
-
-mqtt:
-  enabled: true
-  broker: "tcp://mqtt:1883"
-  client-id: "openai-compatible-proxy"
-  username: "guest"
-  password: "guest"
-  topic: "system/suspend"
-  qos: 1
-  idle:
-    timeout: 10m
-    message: "suspend"
 
 log:
   level: TRACE
