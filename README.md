@@ -15,6 +15,7 @@ A smart proxy service that provides unified API access to [LM Studio](https://lm
 - 📚 **Swagger Documentation**: Interactive API documentation at `/swagger-ui/`
 - 🐳 **Docker Support**: Multi-platform images (amd64/arm64) with Docker Compose
 - 🔒 **Token Authentication**: Multiple revocable Bearer tokens guarding the OpenAI API
+- 🚦 **Sticky-Session Scheduler**: Serialize generation requests so the local model keeps one agent's context warm, switching sessions only after an idle window or a completed turn
 
 ## 🚀 Quick Start
 
@@ -49,6 +50,27 @@ docker-compose up -d
 4. Access the service:
 - API: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui/`
+
+### Sticky-Session Scheduler
+
+When multiple agents (e.g. opencode subagents) share one local model, interleaving
+their requests forces expensive context re-evaluation on every switch. The scheduler
+runs one generation at a time and keeps the active session warm:
+
+```yaml
+scheduler:
+  enabled: true
+  idle-timeout: 10s          # how long the active session keeps priority when idle
+  gated-paths:
+    - /v1/chat/completions
+    - /v1/completions
+    - /v1/responses
+```
+
+Sessions are identified by the `X-Session-Id` request header (sent by opencode). A
+waiting session takes over only after the active session finishes a turn (`stop`) or
+stays idle past `idle-timeout`; a turn ending in `tool_calls` holds the slot so the
+agent can continue after running its tool.
 
 ### Building from Source
 
