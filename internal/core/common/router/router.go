@@ -5,10 +5,12 @@ import (
 	_ "fernandoglatz/openai-compatible-proxy/docs"
 	"fernandoglatz/openai-compatible-proxy/internal/controller"
 	"fernandoglatz/openai-compatible-proxy/internal/core/common/utils/log"
+	"fernandoglatz/openai-compatible-proxy/internal/core/scheduler"
 	"fernandoglatz/openai-compatible-proxy/internal/core/service"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/api"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/config"
 	"fernandoglatz/openai-compatible-proxy/internal/infrastructure/repository"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -37,6 +39,15 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	// configured-token count, so calling it per group would repeat that line on startup.
 	authenticationMiddleware := controller.AuthenticationMiddleware(ctx)
 
+	// Built once and shared: one scheduler instance owns the serialization state for
+	// every gated generation endpoint. Default the grace window if unset.
+	schedulerCfg := config.ApplicationConfig.Scheduler
+	if schedulerCfg.Enabled && schedulerCfg.IdleTimeout <= 0 {
+		schedulerCfg.IdleTimeout = 10 * time.Second
+	}
+	requestScheduler := scheduler.NewScheduler(schedulerCfg.IdleTimeout)
+	schedulerMiddleware := controller.SchedulerMiddleware(requestScheduler, schedulerCfg)
+
 	// OpenAI routes - authenticated, use middleware to handle /v1/models specifically before proxy
 	routerV1 := router.Group("/v1")
 	routerV1.Use(authenticationMiddleware)
@@ -49,6 +60,7 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 		}
 		c.Next()
 	})
+	routerV1.Use(schedulerMiddleware)
 	// Proxy catches all /v1/* requests
 	routerV1.Any("/*any", lmStudioProxyController.ProxyRequest)
 
@@ -87,6 +99,7 @@ func Setup(ctx context.Context, engine *gin.Engine) {
 	routerAPIV1 := routerAPI.Group("/v1")
 	routerAPIV1.Use(authenticationMiddleware)
 	routerAPIV1.Use(interceptGet("/api/v1/models", lmStudioV1Controller.ListModels))
+	routerAPIV1.Use(schedulerMiddleware)
 	// Proxy catches chat, models/load, models/unload, models/download, models/download/status
 	routerAPIV1.Any("/*any", lmStudioProxyController.ProxyRequest)
 
