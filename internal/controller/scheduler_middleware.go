@@ -56,9 +56,8 @@ func SchedulerMiddleware(sched *scheduler.Scheduler, cfg config.SchedulerConfig)
 
 		writer := &finishReasonWriter{ResponseWriter: ginCtx.Writer}
 		ginCtx.Writer = writer
+		defer func() { release(writer.done()) }()
 
 		ginCtx.Next()
-
-		release(writer.done())
 	}
 }

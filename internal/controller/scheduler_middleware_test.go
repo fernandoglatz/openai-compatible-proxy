@@ -112,3 +112,54 @@ func TestSchedulerMiddlewareSerializesGatedRequests(t *testing.T) {
 		t.Errorf("max concurrent in-flight = %d, want 1", maxSeen)
 	}
 }
+
+// TestSchedulerMiddlewareReleasesOnPanic guards against a regression where release()
+// was called only after ginCtx.Next() returned normally. If a downstream handler
+// panics, gin's Recovery middleware (registered outside the scheduler middleware, as
+// in production) unwinds the stack past that call site, so the slot is never released
+// and every subsequent gated request deadlocks in Acquire. release() must be deferred
+// so it still runs during a panic-driven unwind.
+func TestSchedulerMiddlewareReleasesOnPanic(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	engine.Use(gin.Recovery())
+	sched := scheduler.NewScheduler(10 * time.Millisecond)
+	cfg := config.SchedulerConfig{Enabled: true, GatedPaths: []string{"/v1/chat/completions"}}
+	engine.Use(SchedulerMiddleware(sched, cfg))
+	engine.POST("/v1/chat/completions", func(c *gin.Context) {
+		if c.Request.Header.Get("X-Session-Id") == "panic" {
+			panic("boom")
+		}
+		c.String(http.StatusOK, `{"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	// Request 1: downstream handler panics. Recovery middleware should catch it and
+	// respond 500, without hanging.
+	rec1 := httptest.NewRecorder()
+	req1 := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+	req1.Header.Set("X-Session-Id", "panic")
+	engine.ServeHTTP(rec1, req1)
+	if rec1.Code != http.StatusInternalServerError {
+		t.Fatalf("panic request code = %d, want %d", rec1.Code, http.StatusInternalServerError)
+	}
+
+	// Request 2: if the slot leaked from request 1, this blocks forever in
+	// sched.Acquire. Bound the wait so the test fails cleanly instead of hanging.
+	done := make(chan int, 1)
+	go func() {
+		rec2 := httptest.NewRecorder()
+		req2 := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+		req2.Header.Set("X-Session-Id", "ok")
+		engine.ServeHTTP(rec2, req2)
+		done <- rec2.Code
+	}()
+
+	select {
+	case code := <-done:
+		if code != http.StatusOK {
+			t.Errorf("follow-up request code = %d, want %d", code, http.StatusOK)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("follow-up request timed out: scheduler slot leaked after downstream panic")
+	}
+}
