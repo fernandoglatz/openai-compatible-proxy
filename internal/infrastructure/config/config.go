@@ -12,6 +12,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// SchedulerConfig controls the sticky-session request scheduler. MaxConcurrent is
+// reserved; only a value of 1 (serialize) is currently honored.
+type SchedulerConfig struct {
+	Enabled       bool          `yaml:"enabled"`
+	MaxConcurrent int           `yaml:"max-concurrent"`
+	IdleTimeout   time.Duration `yaml:"idle-timeout"`
+	GatedPaths    []string      `yaml:"gated-paths"`
+}
+
 type Config struct {
 	Server struct {
 		Listening   string `yaml:"listening"`
@@ -47,6 +56,8 @@ type Config struct {
 		Format  format.Format `yaml:"format"`
 		Colored bool          `yaml:"colored"`
 	} `yaml:"log"`
+
+	Scheduler SchedulerConfig `yaml:"scheduler"`
 }
 
 type Tenant struct {

@@ -25,3 +25,12 @@ log:
   level: TRACE
   format: TEXT
   colored: true
+
+scheduler:
+  enabled: true               # false = forward with no scheduling (today's behavior)
+  max-concurrent: 1           # reserved; only 1 (serialize) is currently supported
+  idle-timeout: 10s           # grace window before switching to a waiting session
+  gated-paths:                # suffix match; covers both /v1/* and /api/v1/*
+    - /v1/chat/completions
+    - /v1/completions
+    - /v1/responses
