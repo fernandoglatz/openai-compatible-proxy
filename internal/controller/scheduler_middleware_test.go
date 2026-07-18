@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -161,5 +163,110 @@ func TestSchedulerMiddlewareReleasesOnPanic(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("follow-up request timed out: scheduler slot leaked after downstream panic")
+	}
+}
+
+// TestSchedulerMiddlewareRemovesQueuedRequestOnDisconnect drives the full HTTP
+// path: a queued request whose client connection closes must be removed from the
+// scheduler queue, so the slot it was waiting for is never handed to the departed
+// client. This exercises the real net/http connection-close -> request-context
+// cancellation -> Acquire ctx.Done -> removeWaiterLocked chain that the unit-level
+// TestCancelWhileWaiting only approximates with a manually canceled context.
+func TestSchedulerMiddlewareRemovesQueuedRequestOnDisconnect(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	sched := scheduler.NewScheduler(10 * time.Millisecond)
+	cfg := config.SchedulerConfig{Enabled: true, GatedPaths: []string{"/v1/chat/completions"}}
+	engine.Use(SchedulerMiddleware(sched, cfg))
+
+	started := make(chan string, 8)   // session keys that reached the handler (hold the slot)
+	release := make(chan struct{}, 8) // one token lets one held handler finish
+	engine.POST("/v1/chat/completions", func(c *gin.Context) {
+		started <- c.Request.Header.Get("X-Session-Id")
+		<-release
+		c.String(http.StatusOK, `{"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	srv := httptest.NewServer(engine)
+	defer srv.Close()
+
+	// Distinct connection per request so canceling one client closes its own socket.
+	client := &http.Client{Transport: &http.Transport{DisableKeepAlives: true}}
+	post := func(ctx context.Context, sid string) (*http.Response, error) {
+		req, _ := http.NewRequestWithContext(ctx, http.MethodPost, srv.URL+"/v1/chat/completions", nil)
+		req.Header.Set("X-Session-Id", sid)
+		return client.Do(req)
+	}
+	drain := func(resp *http.Response) {
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+	}
+
+	// Session A occupies the slot and holds it until released.
+	aDone := make(chan struct{})
+	go func() {
+		if resp, err := post(context.Background(), "A"); err == nil {
+			drain(resp)
+		}
+		close(aDone)
+	}()
+	select {
+	case k := <-started:
+		if k != "A" {
+			t.Fatalf("expected A to hold the slot first, got %q", k)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("A never reached the handler")
+	}
+
+	// Session B arrives and must queue behind A, then disconnects.
+	bCtx, bCancel := context.WithCancel(context.Background())
+	bErr := make(chan error, 1)
+	go func() {
+		_, err := post(bCtx, "B")
+		bErr <- err
+	}()
+	time.Sleep(200 * time.Millisecond) // let B reach the server and enqueue
+	select {
+	case k := <-started:
+		t.Fatalf("queued session %q reached the handler while A held the slot", k)
+	default: // expected: B is parked in the queue, handler not entered
+	}
+	bCancel() // client B closes the connection while queued
+	select {
+	case err := <-bErr:
+		if err == nil {
+			t.Fatal("B request returned nil error after cancellation")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("B request did not return after cancellation")
+	}
+
+	// Release A. If B was NOT removed from the queue, the freed slot leaks to the
+	// departed B and C can never acquire it.
+	release <- struct{}{}
+	<-aDone
+
+	cResult := make(chan error, 1)
+	go func() {
+		resp, err := post(context.Background(), "C")
+		if err != nil {
+			cResult <- err
+			return
+		}
+		drain(resp)
+		cResult <- nil
+	}()
+	select {
+	case k := <-started:
+		if k != "C" {
+			t.Fatalf("expected C to acquire the freed slot, got %q", k)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("C never acquired the slot: queued B was not removed on disconnect (slot leaked)")
+	}
+	release <- struct{}{}
+	if err := <-cResult; err != nil {
+		t.Fatalf("C request failed: %v", err)
 	}
 }
