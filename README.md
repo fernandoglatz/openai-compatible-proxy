@@ -73,6 +73,11 @@ stays idle past `idle-timeout`; a turn ending in `tool_calls` holds the slot so 
 agent can continue after running its tool. Error responses and completed
 Responses-API turns also release the slot immediately.
 
+Requests wait in a FIFO queue while another session holds the slot. If a waiting
+client disconnects, its request is dropped from the queue, so a freed slot is
+never handed to a departed client. Set `enabled: false` to disable scheduling
+entirely and forward requests as-is.
+
 ### Building from Source
 
 **Prerequisites:**
