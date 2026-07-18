@@ -70,7 +70,8 @@ scheduler:
 Sessions are identified by the `X-Session-Id` request header (sent by opencode). A
 waiting session takes over only after the active session finishes a turn (`stop`) or
 stays idle past `idle-timeout`; a turn ending in `tool_calls` holds the slot so the
-agent can continue after running its tool.
+agent can continue after running its tool. Error responses and completed
+Responses-API turns also release the slot immediately.
 
 ### Building from Source
 

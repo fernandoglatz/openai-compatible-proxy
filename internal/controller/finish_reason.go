@@ -26,3 +26,15 @@ func isSessionDone(finishReason string) bool {
 		return false
 	}
 }
+
+// responseEventRe matches the OpenAI Responses API streaming terminal event,
+// e.g. {"type":"response.completed"}. responseStatusRe matches the non-streamed
+// terminal status, e.g. {"status":"completed"}. The Responses API never emits
+// finish_reason, so these are its "turn is done" signals.
+var responseEventRe = regexp.MustCompile(`"type"\s*:\s*"response\.(completed|failed|incomplete)"`)
+var responseStatusRe = regexp.MustCompile(`"status"\s*:\s*"(completed|failed|incomplete)"`)
+
+// isResponsesDone reports whether buf contains a Responses-API terminal signal.
+func isResponsesDone(buf []byte) bool {
+	return responseEventRe.Match(buf) || responseStatusRe.Match(buf)
+}

@@ -28,6 +28,28 @@ func TestLastFinishReason(t *testing.T) {
 	}
 }
 
+func TestIsResponsesDone(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want bool
+	}{
+		{"response completed", `{"type":"response.completed"}`, true},
+		{"status completed", `{"status":"completed"}`, true},
+		{"response failed", `{"type":"response.failed"}`, true},
+		{"output text delta", `{"type":"response.output_text.delta"}`, false},
+		{"chat finish_reason not responses", `data: {"choices":[{"finish_reason":"tool_calls"}]}`, false},
+		{"empty", ``, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := isResponsesDone([]byte(c.in)); got != c.want {
+				t.Errorf("isResponsesDone(%q) = %v, want %v", c.in, got, c.want)
+			}
+		})
+	}
+}
+
 func TestIsSessionDone(t *testing.T) {
 	done := map[string]bool{
 		"stop":           true,

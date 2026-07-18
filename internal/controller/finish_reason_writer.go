@@ -31,8 +31,16 @@ func (w *finishReasonWriter) capture(b []byte) {
 	}
 }
 
-// done reports whether the session's turn completed, based on the last
-// finish_reason observed in the streamed response.
+// done reports whether the session's turn completed, so a waiting session may
+// take over immediately. True when the upstream returned an error status (error
+// bodies carry no finish_reason), when the chat/completions finish_reason is
+// terminal, or when a Responses-API terminal signal is present.
 func (w *finishReasonWriter) done() bool {
-	return isSessionDone(lastFinishReason(w.tail))
+	if w.Status() >= 400 {
+		return true
+	}
+	if isSessionDone(lastFinishReason(w.tail)) {
+		return true
+	}
+	return isResponsesDone(w.tail)
 }
