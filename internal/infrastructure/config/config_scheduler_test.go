@@ -33,3 +33,24 @@ scheduler:
 		t.Errorf("GatedPaths = %v, unexpected", s.GatedPaths)
 	}
 }
+
+func TestSchedulerHeartbeatConfigParses(t *testing.T) {
+	raw := `
+scheduler:
+  enabled: true
+  heartbeat-after: 15s
+  heartbeat-interval: 10s
+`
+	var cfg Config
+	if err := yaml.Unmarshal([]byte(raw), &cfg); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+
+	s := cfg.Scheduler
+	if s.HeartbeatAfter != 15*time.Second {
+		t.Errorf("HeartbeatAfter = %v, want 15s", s.HeartbeatAfter)
+	}
+	if s.HeartbeatInterval != 10*time.Second {
+		t.Errorf("HeartbeatInterval = %v, want 10s", s.HeartbeatInterval)
+	}
+}

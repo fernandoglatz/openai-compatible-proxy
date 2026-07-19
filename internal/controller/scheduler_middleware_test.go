@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -183,7 +184,13 @@ func TestSchedulerMiddlewareRemovesQueuedRequestOnDisconnect(t *testing.T) {
 	release := make(chan struct{}, 8) // one token lets one held handler finish
 	engine.POST("/v1/chat/completions", func(c *gin.Context) {
 		started <- c.Request.Header.Get("X-Session-Id")
-		<-release
+		// Bounded: httptest.Server.Close waits for outstanding requests, so a handler
+		// parked forever would turn any failed assertion below into a hung test
+		// (t.Fatalf unwinds into the deferred Close) instead of a reported failure.
+		select {
+		case <-release:
+		case <-time.After(5 * time.Second):
+		}
 		c.String(http.StatusOK, `{"choices":[{"finish_reason":"stop"}]}`)
 	})
 
@@ -257,16 +264,292 @@ func TestSchedulerMiddlewareRemovesQueuedRequestOnDisconnect(t *testing.T) {
 		drain(resp)
 		cResult <- nil
 	}()
-	select {
-	case k := <-started:
-		if k != "C" {
-			t.Fatalf("expected C to acquire the freed slot, got %q", k)
+	// C must reach the handler. A departed B may still surface first: if the slot is
+	// granted at the same instant its client cancels, Acquire's select between w.ready
+	// and ctx.Done resolves randomly, so B's handler can legitimately run once and then
+	// release. That is a wasted turn, not a leak - what must never happen is C being
+	// starved, so skip a stale B and keep waiting for C.
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case k := <-started:
+			if k == "C" {
+				goto acquired
+			}
+			t.Logf("stale session %q won the grant/cancel race and took a turn", k)
+			release <- struct{}{} // let it finish so the slot moves on to C
+		case <-deadline:
+			t.Fatal("C never acquired the slot: queued B was not removed on disconnect (slot leaked)")
 		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("C never acquired the slot: queued B was not removed on disconnect (slot leaked)")
 	}
+acquired:
 	release <- struct{}{}
 	if err := <-cResult; err != nil {
 		t.Fatalf("C request failed: %v", err)
+	}
+}
+
+func TestIsStreamingRequestPreservesBody(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := `{"model":"m","stream":true,"messages":[]}`
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(body))
+
+	if !isStreamingRequest(ginCtx) {
+		t.Errorf("isStreamingRequest = false, want true")
+	}
+
+	// The handler downstream must still see the untouched body.
+	got, err := io.ReadAll(ginCtx.Request.Body)
+	if err != nil {
+		t.Fatalf("re-reading body failed: %v", err)
+	}
+	if string(got) != body {
+		t.Errorf("body after detection = %q, want %q", got, body)
+	}
+}
+
+func TestIsStreamingRequestFalseCases(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	cases := map[string]string{
+		"explicit false": `{"model":"m","stream":false}`,
+		"absent":         `{"model":"m"}`,
+		"not json":       `garbage`,
+		"empty":          ``,
+	}
+	for name, body := range cases {
+		ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+		ginCtx.Request = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(body))
+		if isStreamingRequest(ginCtx) {
+			t.Errorf("%s: isStreamingRequest = true, want false", name)
+		}
+	}
+}
+
+func heartbeatTestEngine(t *testing.T, cfg config.SchedulerConfig, handler gin.HandlerFunc) *gin.Engine {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	engine.Use(SchedulerMiddleware(scheduler.NewScheduler(10*time.Millisecond), cfg))
+	engine.POST("/v1/chat/completions", handler)
+	return engine
+}
+
+func streamingRequest(sid string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions",
+		strings.NewReader(`{"model":"m","stream":true}`))
+	req.Header.Set("X-Session-Id", sid)
+	return req
+}
+
+// A slot may be granted long before the upstream emits its first token (prompt
+// processing on a large context), so the heartbeat must cover that window too, not
+// just the queue wait.
+func TestSchedulerMiddlewareHeartbeatsWhileAwaitingFirstByte(t *testing.T) {
+	cfg := config.SchedulerConfig{
+		Enabled:           true,
+		GatedPaths:        []string{"/v1/chat/completions"},
+		HeartbeatAfter:    10 * time.Millisecond,
+		HeartbeatInterval: 10 * time.Millisecond,
+	}
+	engine := heartbeatTestEngine(t, cfg, func(c *gin.Context) {
+		time.Sleep(120 * time.Millisecond)
+		c.String(http.StatusOK, `data: {"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, streamingRequest("ses_slow"))
+
+	body := rec.Body.String()
+	if !strings.HasPrefix(body, heartbeatComment) {
+		t.Errorf("body did not start with a heartbeat: %q", body)
+	}
+	if strings.Count(body, heartbeatComment) < 2 {
+		t.Errorf("want repeated heartbeats, got %d in %q", strings.Count(body, heartbeatComment), body)
+	}
+	if !strings.HasSuffix(body, `data: {"choices":[{"finish_reason":"stop"}]}`) {
+		t.Errorf("handler payload missing or not last: %q", body)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "text/event-stream" {
+		t.Errorf("Content-Type = %q, want text/event-stream", ct)
+	}
+}
+
+// The queued request is the case that was timing out: it sends nothing at all until
+// the active session finishes.
+func TestSchedulerMiddlewareHeartbeatsWhileQueued(t *testing.T) {
+	cfg := config.SchedulerConfig{
+		Enabled:           true,
+		GatedPaths:        []string{"/v1/chat/completions"},
+		HeartbeatAfter:    10 * time.Millisecond,
+		HeartbeatInterval: 10 * time.Millisecond,
+	}
+	release := make(chan struct{})
+	engine := heartbeatTestEngine(t, cfg, func(c *gin.Context) {
+		if c.Request.Header.Get("X-Session-Id") == "ses_holder" {
+			<-release
+		}
+		c.String(http.StatusOK, `data: {"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		engine.ServeHTTP(httptest.NewRecorder(), streamingRequest("ses_holder"))
+	}()
+
+	time.Sleep(20 * time.Millisecond) // let the holder take the slot
+	queued := httptest.NewRecorder()
+	var qwg sync.WaitGroup
+	qwg.Add(1)
+	go func() {
+		defer qwg.Done()
+		engine.ServeHTTP(queued, streamingRequest("ses_queued"))
+	}()
+
+	time.Sleep(80 * time.Millisecond) // queued request is stuck waiting for the slot
+	close(release)
+	wg.Wait()
+	qwg.Wait()
+
+	if !strings.HasPrefix(queued.Body.String(), heartbeatComment) {
+		t.Errorf("queued request sent no heartbeat while waiting: %q", queued.Body.String())
+	}
+}
+
+func TestSchedulerMiddlewareNoHeartbeatForNonStreaming(t *testing.T) {
+	cfg := config.SchedulerConfig{
+		Enabled:           true,
+		GatedPaths:        []string{"/v1/chat/completions"},
+		HeartbeatAfter:    10 * time.Millisecond,
+		HeartbeatInterval: 10 * time.Millisecond,
+	}
+	engine := heartbeatTestEngine(t, cfg, func(c *gin.Context) {
+		time.Sleep(60 * time.Millisecond)
+		c.String(http.StatusOK, `{"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions",
+		strings.NewReader(`{"model":"m","stream":false}`))
+	req.Header.Set("X-Session-Id", "ses_json")
+	engine.ServeHTTP(rec, req)
+
+	if strings.Contains(rec.Body.String(), ":") && strings.HasPrefix(rec.Body.String(), ":") {
+		t.Errorf("non-streaming body was polluted with a heartbeat: %q", rec.Body.String())
+	}
+	if rec.Body.String() != `{"choices":[{"finish_reason":"stop"}]}` {
+		t.Errorf("body = %q, want untouched JSON", rec.Body.String())
+	}
+}
+
+func TestSchedulerMiddlewareHeartbeatDisabledByZeroInterval(t *testing.T) {
+	cfg := config.SchedulerConfig{
+		Enabled:           true,
+		GatedPaths:        []string{"/v1/chat/completions"},
+		HeartbeatAfter:    10 * time.Millisecond,
+		HeartbeatInterval: 0,
+	}
+	engine := heartbeatTestEngine(t, cfg, func(c *gin.Context) {
+		time.Sleep(60 * time.Millisecond)
+		c.String(http.StatusOK, `data: {"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	rec := httptest.NewRecorder()
+	engine.ServeHTTP(rec, streamingRequest("ses_off"))
+
+	if strings.Contains(rec.Body.String(), heartbeatComment) {
+		t.Errorf("heartbeat emitted despite zero interval: %q", rec.Body.String())
+	}
+}
+
+// A heartbeat commits the response headers before the upstream's are known, so the
+// upstream's Content-Encoding is lost while its compressed body is still forwarded -
+// the client would then read gzip bytes as text. Asking upstream for identity encoding
+// is what keeps the committed headers truthful.
+func TestSchedulerMiddlewareDropsAcceptEncodingWhenHeartbeating(t *testing.T) {
+	cfg := config.SchedulerConfig{
+		Enabled:           true,
+		GatedPaths:        []string{"/v1/chat/completions"},
+		HeartbeatAfter:    10 * time.Millisecond,
+		HeartbeatInterval: 10 * time.Millisecond,
+	}
+	var seen string
+	engine := heartbeatTestEngine(t, cfg, func(c *gin.Context) {
+		seen = c.Request.Header.Get("Accept-Encoding")
+		c.String(http.StatusOK, `data: {"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	req := streamingRequest("ses_gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
+	engine.ServeHTTP(httptest.NewRecorder(), req)
+
+	if seen != "" {
+		t.Errorf("Accept-Encoding forwarded upstream = %q, want it removed", seen)
+	}
+}
+
+// Without a heartbeat the upstream's own headers reach the client untouched, so
+// compression must keep working.
+func TestSchedulerMiddlewareKeepsAcceptEncodingWhenNotHeartbeating(t *testing.T) {
+	cfg := config.SchedulerConfig{
+		Enabled:           true,
+		GatedPaths:        []string{"/v1/chat/completions"},
+		HeartbeatInterval: 0,
+	}
+	var seen string
+	engine := heartbeatTestEngine(t, cfg, func(c *gin.Context) {
+		seen = c.Request.Header.Get("Accept-Encoding")
+		c.String(http.StatusOK, `data: {"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	req := streamingRequest("ses_plain")
+	req.Header.Set("Accept-Encoding", "gzip")
+	engine.ServeHTTP(httptest.NewRecorder(), req)
+
+	if seen != "gzip" {
+		t.Errorf("Accept-Encoding = %q, want gzip preserved", seen)
+	}
+}
+
+// A client can disconnect while queued, and the slot may still be granted to it: the
+// scheduler's select between "granted" and "canceled" resolves randomly when both are
+// ready. Running the handler then burns a full generation on a client that will never
+// read it, while the next session waits. The slot must be handed straight back.
+func TestSchedulerMiddlewareSkipsHandlerForCanceledRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	engine := gin.New()
+	cfg := config.SchedulerConfig{Enabled: true, GatedPaths: []string{"/v1/chat/completions"}}
+	engine.Use(SchedulerMiddleware(scheduler.NewScheduler(10*time.Millisecond), cfg))
+
+	var handlerRan atomic.Bool
+	engine.POST("/v1/chat/completions", func(c *gin.Context) {
+		handlerRan.Store(true)
+		c.String(http.StatusOK, `{"choices":[{"finish_reason":"stop"}]}`)
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // the client is already gone when the slot is granted
+	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil).WithContext(ctx)
+	req.Header.Set("X-Session-Id", "departed")
+	engine.ServeHTTP(httptest.NewRecorder(), req)
+
+	if handlerRan.Load() {
+		t.Error("handler ran for a request whose client had already disconnected")
+	}
+
+	// The slot must not be stuck: a live session still gets served.
+	served := make(chan struct{})
+	go func() {
+		defer close(served)
+		live := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
+		live.Header.Set("X-Session-Id", "live")
+		engine.ServeHTTP(httptest.NewRecorder(), live)
+	}()
+	select {
+	case <-served:
+	case <-time.After(2 * time.Second):
+		t.Fatal("slot leaked: a live session could not acquire it")
 	}
 }

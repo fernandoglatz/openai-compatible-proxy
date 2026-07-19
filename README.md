@@ -61,6 +61,8 @@ runs one generation at a time and keeps the active session warm:
 scheduler:
   enabled: true
   idle-timeout: 10s          # how long the active session keeps priority when idle
+  heartbeat-after: 15s       # silence tolerated before keep-alive pings start
+  heartbeat-interval: 10s    # gap between pings (see Keep-alive heartbeats below)
   gated-paths:
     - /v1/chat/completions
     - /v1/completions
@@ -77,6 +79,30 @@ Requests wait in a FIFO queue while another session holds the slot. If a waiting
 client disconnects, its request is dropped from the queue, so a freed slot is
 never handed to a departed client. Set `enabled: false` to disable scheduling
 entirely and forward requests as-is.
+
+#### Keep-alive heartbeats
+
+A queued request sends no bytes until it wins the slot, and even after winning it
+stays silent while the model processes the prompt. A CDN or reverse proxy in front
+of this service will abort a response that quiet for too long — CloudFront's origin
+response timeout defaults to 30s — which surfaces as subagents timing out under load.
+
+While a streamed request waits, the scheduler emits SSE comment lines (`: scheduler
+queued`), which every compliant SSE parser discards:
+
+```yaml
+scheduler:
+  heartbeat-after: 15s       # silence tolerated before pings start
+  heartbeat-interval: 10s    # gap between pings; keep below your CDN's timeout
+```
+
+Heartbeats apply only to `"stream": true` requests, since bytes cannot be injected
+into a single JSON body. `heartbeat-after` keeps the fast path untouched: a request
+that never stalls is never heartbeated and reports its true HTTP status. Once a
+heartbeat is sent the response is committed as `200`, so a later upstream error is
+reported in-band rather than as a status code — the scheduler still reads the intended
+status internally and releases the slot immediately. Set `heartbeat-interval: 0` to
+disable.
 
 ### Building from Source
 

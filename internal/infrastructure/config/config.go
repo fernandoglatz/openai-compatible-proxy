@@ -14,11 +14,18 @@ import (
 
 // SchedulerConfig controls the sticky-session request scheduler. MaxConcurrent is
 // reserved; only a value of 1 (serialize) is currently honored.
+//
+// A queued request sends no bytes until it wins the slot, so an intermediary with a
+// response timeout (CloudFront defaults to 30s) aborts it mid-wait. HeartbeatAfter and
+// HeartbeatInterval keep such connections alive by emitting SSE comments while waiting;
+// see heartbeatWriter. Zero HeartbeatInterval disables the heartbeat entirely.
 type SchedulerConfig struct {
-	Enabled       bool          `yaml:"enabled"`
-	MaxConcurrent int           `yaml:"max-concurrent"`
-	IdleTimeout   time.Duration `yaml:"idle-timeout"`
-	GatedPaths    []string      `yaml:"gated-paths"`
+	Enabled           bool          `yaml:"enabled"`
+	MaxConcurrent     int           `yaml:"max-concurrent"`
+	IdleTimeout       time.Duration `yaml:"idle-timeout"`
+	GatedPaths        []string      `yaml:"gated-paths"`
+	HeartbeatAfter    time.Duration `yaml:"heartbeat-after"`
+	HeartbeatInterval time.Duration `yaml:"heartbeat-interval"`
 }
 
 type Config struct {
