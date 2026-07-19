@@ -32,7 +32,7 @@ func main() {
 		log.Fatal(ctx).Msg(err.Error())
 	}
 
-	err = utils.ConnectToMongoDB(ctx)
+	err = utils.ConnectToDatabase(ctx)
 	if err != nil {
 		log.Fatal(ctx).Msg(err.Error())
 	}

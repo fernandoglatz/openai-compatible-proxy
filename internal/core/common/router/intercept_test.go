@@ -9,7 +9,7 @@ import (
 )
 
 // buildTestEngine wires a group the same way Setup does, with stub handlers so the
-// routing decision is observable without Mongo or an upstream.
+// routing decision is observable without a database or an upstream.
 func buildTestEngine() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()

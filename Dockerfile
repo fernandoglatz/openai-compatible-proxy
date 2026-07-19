@@ -26,10 +26,15 @@ RUN printf 'package main\nimport(\n"net/http"\n"os"\n)\nfunc main(){\nresp,err:=
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o healthcheck /tmp/healthcheck.go
 
+# scratch has no /tmp, and modernc.org/sqlite needs a writable temp dir for some
+# operations. Stage an empty one to copy into the final image.
+RUN mkdir -p /staging/tmp && chmod 1777 /staging/tmp
+
 
 FROM scratch
 WORKDIR /app
 
+COPY --from=go-alpine /staging/tmp /tmp
 COPY --from=go-alpine /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=go-alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=go-alpine /go/src/main /app

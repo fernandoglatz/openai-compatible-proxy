@@ -11,7 +11,7 @@ A smart proxy service that provides unified API access to [LM Studio](https://lm
 - 🔄 **Multi-API Support**: Translate between OpenAI, Ollama, and LM Studio API formats
 - 🌊 **Streaming Support**: Efficient token streaming for real-time LLM responses
 - 🔌 **Wake-on-LAN**: Automatically wake sleeping LM Studio hosts on-demand
-- 💾 **Model Caching**: MongoDB-based model metadata persistence
+- 💾 **Model Caching**: Model metadata persisted in an embedded SQLite file — no database server to run
 - 📚 **Swagger Documentation**: Interactive API documentation at `/swagger-ui/`
 - 🐳 **Docker Support**: Multi-platform images (amd64/arm64) with Docker Compose
 - 🔒 **Token Authentication**: Multiple revocable Bearer tokens guarding the OpenAI API
@@ -108,7 +108,10 @@ disable.
 
 **Prerequisites:**
 - Go 1.25 or later
-- MongoDB (required — the app exits at startup if it cannot connect)
+
+No database server is needed. SQLite is embedded in the binary (pure Go, so builds stay
+`CGO_ENABLED=0`), and the database file plus its schema are created on first run at the
+path set by `data.sqlite.path`.
 
 ```bash
 # Install dependencies
@@ -197,9 +200,8 @@ server:
   context-path: "/"
 
 data:
-  mongo:
-    uri: "mongodb://mongo:27017"
-    database: "openai-compatible-proxy"
+  sqlite:
+    path: "data/openai-compatible-proxy.db"   # created on first run; relative to the working directory
 
 openai:
   api-keys: []   # Tokens accepted by the proxy; empty disables authentication
@@ -285,7 +287,7 @@ internal/
 
 - **Proxy Controller**: Forwards requests to LM Studio with streaming support
 - **LM Studio Service**: Handles WOL, retries, and model synchronization
-- **Model Service**: CRUD operations for model metadata in MongoDB
+- **Model Service**: CRUD operations for model metadata in SQLite
 
 ### Energy-Efficient Workflow
 
@@ -341,7 +343,8 @@ docker buildx build --platform linux/amd64,linux/arm64 -t openai-compatible-prox
   network isolation if they should not be public
 - Terminate TLS at a reverse proxy — over plain HTTP, Bearer tokens travel in cleartext
 - Treat `conf/application.yml` as a secret; do not commit real tokens
-- Use MongoDB authentication in production
+- Restrict access to the SQLite file and the volume holding it; it is readable by anyone
+  with filesystem access to the host
 - Consider network isolation for LM Studio host
 
 ## 🤝 Contributing
@@ -362,7 +365,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 - [LM Studio](https://lmstudio.ai/) - Local LLM hosting
 - [Gin](https://github.com/gin-gonic/gin) - HTTP web framework
-- [MongoDB](https://www.mongodb.com/) - Database
+- [SQLite](https://sqlite.org/) - Embedded database, via [modernc.org/sqlite](https://pkg.go.dev/modernc.org/sqlite)
 
 ## 📬 Support
 

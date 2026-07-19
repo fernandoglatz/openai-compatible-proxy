@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// stubModelService returns canned models, standing in for Mongo.
+// stubModelService returns canned models, standing in for the database.
 type stubModelService struct {
 	models []entity.Model
 }
@@ -137,7 +137,7 @@ func TestV1ListModelsOmitsCapabilitiesForEmbeddings(t *testing.T) {
 // the v0 sync path actually produces: no v1 metadata at all (Capabilities, SizeBytes,
 // ParamsString, LoadedInstanceIDs all zero), and Type in whatever vocabulary v0 uses -
 // believed to be "embeddings" (plural), unlike v1's "embedding" (singular). Every model in
-// Mongo has this shape on a pre-0.4.0 LM Studio host, so this is the case that matters most
+// The stored row has this shape on a pre-0.4.0 LM Studio host, so this is the case that matters most
 // for that fallback to keep working.
 func TestV1ListModelsOmitsCapabilitiesForV0SyncedEmbeddingModel(t *testing.T) {
 	gin.SetMode(gin.TestMode)

@@ -12,25 +12,11 @@ services:
       - TZ=${TZ}
     volumes:
       - ./conf:/app/conf
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-
-  mongo:
-    image: mongo:7
-    hostname: mongo
-    ports:
-     - "27017:27017"
-    restart: unless-stopped
-    environment:
-      - TZ=${TZ}
-    volumes:
-      - mongodb-data:/data/db
+      - sqlite-data:/app/data
     logging:
       driver: "json-file"
       options:
         max-size: "50m"
 
 volumes:
-  mongodb-data:
+  sqlite-data:

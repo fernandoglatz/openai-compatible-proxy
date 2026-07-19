@@ -3,9 +3,8 @@ server:
   context-path: "/"
 
 data:
-  mongo:
-    uri: "mongodb://mongo:27017"
-    database: "openai-compatible-proxy"
+  sqlite:
+    path: "data/openai-compatible-proxy.db"
 
 openai:
   api-keys: []

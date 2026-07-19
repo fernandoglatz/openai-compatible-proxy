@@ -35,10 +35,9 @@ type Config struct {
 	} `yaml:"server"`
 
 	Data struct {
-		Mongo struct {
-			Uri      string `yaml:"uri"`
-			Database string `yaml:"database"`
-		} `yaml:"mongo"`
+		SQLite struct {
+			Path string `yaml:"path"`
+		} `yaml:"sqlite"`
 	} `yaml:"data"`
 
 	OpenAI struct {

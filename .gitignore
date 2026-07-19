@@ -27,3 +27,6 @@ bin/
 
 docs/superpowers
 .superpowers
+
+# SQLite database (created at runtime)
+data/
